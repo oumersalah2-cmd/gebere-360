@@ -42,11 +42,47 @@ export function convertLengthToMeters(value: number, unit: MeasurementUnit): num
 }
 
 /**
+ * Computes land valuation in ETB from area and optional unit price.
+ */
+export function calculateLandValuation(
+  squareMeters: number,
+  hectares: number,
+  pricePerSquareMeter?: number | null,
+  pricePerHectare?: number | null
+): {
+  pricePerSquareMeter: number | null;
+  pricePerHectare: number | null;
+  estimatedValueETB: number | null;
+} {
+  if (typeof pricePerHectare === 'number' && Number.isFinite(pricePerHectare) && pricePerHectare > 0) {
+    return {
+      pricePerSquareMeter: round(pricePerHectare / SQUARE_METERS_PER_HECTARE, 4),
+      pricePerHectare: round(pricePerHectare, 2),
+      estimatedValueETB: round(hectares * pricePerHectare, 2),
+    };
+  }
+
+  if (typeof pricePerSquareMeter === 'number' && Number.isFinite(pricePerSquareMeter) && pricePerSquareMeter > 0) {
+    return {
+      pricePerSquareMeter: round(pricePerSquareMeter, 4),
+      pricePerHectare: round(pricePerSquareMeter * SQUARE_METERS_PER_HECTARE, 2),
+      estimatedValueETB: round(squareMeters * pricePerSquareMeter, 2),
+    };
+  }
+
+  return {
+    pricePerSquareMeter: null,
+    pricePerHectare: null,
+    estimatedValueETB: null,
+  };
+}
+
+/**
  * Calculates area for a rectangular plot.
  * Normalizes length and width to meters before multiplying.
  */
 export function calculateRectangularArea(input: RectangularCalculationInput): LandAreaResult {
-  const { length, width, lengthUnit, widthUnit } = input;
+  const { length, width, lengthUnit, widthUnit, pricePerSquareMeter, pricePerHectare } = input;
 
   const normalizedLengthMeters = convertLengthToMeters(length, lengthUnit);
   const normalizedWidthMeters = convertLengthToMeters(width, widthUnit);
@@ -54,6 +90,7 @@ export function calculateRectangularArea(input: RectangularCalculationInput): La
   const squareMeters = normalizedLengthMeters * normalizedWidthMeters;
   const hectares = squareMeters / SQUARE_METERS_PER_HECTARE;
   const acres = squareMeters / SQUARE_METERS_PER_ACRE;
+  const valuation = calculateLandValuation(squareMeters, hectares, pricePerSquareMeter, pricePerHectare);
 
   return {
     squareMeters: round(squareMeters, 4),
@@ -61,6 +98,7 @@ export function calculateRectangularArea(input: RectangularCalculationInput): La
     acres: round(acres, 4),
     normalizedLengthMeters: round(normalizedLengthMeters, 4),
     normalizedWidthMeters: round(normalizedWidthMeters, 4),
+    ...valuation,
     isEstimate: false,
     disclaimer: RECTANGULAR_DISCLAIMER,
   };
@@ -70,7 +108,11 @@ export function calculateRectangularArea(input: RectangularCalculationInput): La
  * Calculates the surface area of a polygon defined by geographic coordinates (lat/lng)
  * using the spherical excess algorithm on the WGS84 Earth ellipsoid model.
  */
-export function calculatePolygonArea(coordinates: PolygonCoordinates[]): LandAreaResult {
+export function calculatePolygonArea(
+  coordinates: PolygonCoordinates[],
+  pricePerSquareMeter?: number | null,
+  pricePerHectare?: number | null
+): LandAreaResult {
   if (!Array.isArray(coordinates) || coordinates.length < 3) {
     throw new Error('A polygon requires at least 3 valid coordinate vertices.');
   }
@@ -118,11 +160,13 @@ export function calculatePolygonArea(coordinates: PolygonCoordinates[]): LandAre
   const squareMeters = rawAreaMetersSquared;
   const hectares = squareMeters / SQUARE_METERS_PER_HECTARE;
   const acres = squareMeters / SQUARE_METERS_PER_ACRE;
+  const valuation = calculateLandValuation(squareMeters, hectares, pricePerSquareMeter, pricePerHectare);
 
   return {
     squareMeters: round(squareMeters, 2),
     hectares: round(hectares, 4),
     acres: round(acres, 4),
+    ...valuation,
     isEstimate: true,
     disclaimer: MAP_ESTIMATE_DISCLAIMER,
   };

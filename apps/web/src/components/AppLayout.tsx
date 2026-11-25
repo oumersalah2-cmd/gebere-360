@@ -175,7 +175,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <div className="h-8 w-8 rounded-full bg-[#2D6A4F] flex items-center justify-center text-white font-bold">
             <Sprout className="h-5 w-5" />
           </div>
-          <span className="font-bold text-lg tracking-tight">Oomisha360</span>
+          <span className="font-bold text-lg tracking-tight">Gebere 360</span>
         </Link>
 
         <div className="flex items-center gap-2">
@@ -214,7 +214,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-xl tracking-tight text-white group-hover:text-emerald-200 transition-colors">
-                Oomisha360
+                Gebere 360
               </span>
               <span className="text-[10px] text-emerald-200/60 font-medium">
                 Agricultural Tech Platform

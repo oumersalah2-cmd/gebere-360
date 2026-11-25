@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Oomisha360 — Farm Management & Agricultural Intelligence Platform",
-  description: "Know Your Farm. Control Your Costs. Grow Your Profits. Precision agricultural management for Ethiopia.",
+  title: "Gebere 360 — Agricultural Technology Platform",
+  description: "Know Your Farm. Control Your Costs. Grow Your Profits. Integrated AgriTech platform for Oromia and Ethiopia.",
 };
 
 export default function RootLayout({

@@ -38,6 +38,8 @@ export const RectangularCalculationSchema = z.object({
     .positive('Width must be greater than zero'),
   lengthUnit: MeasurementUnitSchema,
   widthUnit: MeasurementUnitSchema,
+  pricePerSquareMeter: z.number().positive().optional().nullable(),
+  pricePerHectare: z.number().positive().optional().nullable(),
 });
 
 export const PolygonCoordinateSchema = z.object({
@@ -49,6 +51,8 @@ export const PolygonCalculationSchema = z.object({
   coordinates: z
     .array(PolygonCoordinateSchema)
     .min(3, 'At least 3 coordinate vertices are required to estimate plot area'),
+  pricePerSquareMeter: z.number().positive().optional().nullable(),
+  pricePerHectare: z.number().positive().optional().nullable(),
 });
 
 export const LandRecordCreateSchema = z.object({
@@ -56,11 +60,15 @@ export const LandRecordCreateSchema = z.object({
   plotName: z.string().min(1, 'Plot name is required').max(120),
   crop: z.string().max(80).optional().nullable(),
   calculationMethod: z.enum(['rectangular', 'polygon']),
+  measurementSource: z.enum(['manual', 'map_polygon', 'gps_walk']).optional().default('manual'),
+  gpsAccuracyMeters: z.number().nonnegative().optional().nullable(),
   length: z.number().positive().optional().nullable(),
   width: z.number().positive().optional().nullable(),
   lengthUnit: MeasurementUnitSchema.optional().nullable(),
   widthUnit: MeasurementUnitSchema.optional().nullable(),
   coordinates: z.array(PolygonCoordinateSchema).optional().nullable(),
+  pricePerSquareMeter: z.number().positive().optional().nullable(),
+  pricePerHectare: z.number().positive().optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
 });
 
@@ -77,10 +85,32 @@ export const FarmCreateSchema = z.object({
     .number({ invalid_type_error: 'Total hectares must be a number' })
     .positive('Total hectares must be greater than zero'),
   primaryCrop: z.string().max(80).optional().nullable(),
+  plantingDate: z.string().max(35).optional().nullable(),
+  harvestingDate: z.string().max(35).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
 });
 
 export const FarmUpdateSchema = FarmCreateSchema.partial();
+
+export const FarmActivityCreateSchema = z.object({
+  activityType: z.enum([
+    'planting',
+    'fertilizing',
+    'weeding',
+    'spraying',
+    'irrigation',
+    'scouting',
+    'harvesting',
+    'other',
+  ]),
+  title: z.string().min(2, 'Activity title is required').max(120),
+  description: z.string().max(1000).optional().nullable(),
+  activityDate: z.string().min(10, 'Valid activity date is required').max(35),
+  status: z.enum(['planned', 'in_progress', 'completed']).default('planned'),
+  costETB: z.number().nonnegative().optional().nullable(),
+});
+
+export const FarmActivityUpdateSchema = FarmActivityCreateSchema.partial();
 
 export const ExpenseCreateSchema = z.object({
   farmId: z.string().min(1, 'Farm ID is required'),
@@ -200,5 +230,45 @@ export const CropProtectionInquirySchema = z.object({
   senderEmail: z.string().email('Invalid email address').optional().nullable(),
   message: z.string().min(5, 'Message must be at least 5 characters').max(1000),
   quantityRequested: z.number().int().positive().optional().nullable(),
+});
+
+export const MarketplaceInquiryUpdateSchema = z.object({
+  status: z.enum(['pending', 'read', 'responded']),
+});
+
+export const NotificationCreateSchema = z.object({
+  title: z.string().min(1).max(150),
+  message: z.string().min(1).max(1000),
+  type: z.enum(['diagnosis', 'marketplace', 'farm', 'finance', 'system']).default('system'),
+  link: z.string().max(300).optional().nullable(),
+});
+
+export const AuthRegisterSchema = z.object({
+  email: z.string().email('Valid email address is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+  fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
+  phone: z.string().max(30).optional().nullable(),
+  region: z.string().max(80).optional().default('Oromia'),
+  zone: z.string().max(80).optional().nullable(),
+  woreda: z.string().max(80).optional().nullable(),
+  role: z.enum(['farmer', 'cooperative_manager', 'buyer', 'agronomist']).default('farmer'),
+});
+
+export const AuthLoginSchema = z.object({
+  email: z.string().email('Valid email address is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+export const AuthRefreshSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required'),
+});
+
+export const AuthForgotPasswordSchema = z.object({
+  email: z.string().email('Valid email address is required'),
+  redirectTo: z.string().url().optional(),
+});
+
+export const AdminUserRoleUpdateSchema = z.object({
+  role: z.enum(['farmer', 'cooperative_manager', 'buyer', 'agronomist', 'admin']),
 });
 

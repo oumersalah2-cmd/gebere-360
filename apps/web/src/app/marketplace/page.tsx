@@ -8,6 +8,8 @@ import {
   VolumeUnit,
 } from "@gebere/shared";
 import { apiClient } from "@/lib/api-client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations } from "@/lib/i18n";
 import {
   ShoppingBag,
   Search,
@@ -24,6 +26,8 @@ import {
 } from "lucide-react";
 
 export default function MarketplacePage() {
+  const { language } = useApp();
+  const t = platformTranslations[language];
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -108,7 +112,7 @@ export default function MarketplacePage() {
         setListings((prev) => [created, ...prev]);
       }
       setIsCreating(false);
-      setStatusMsg("Harvest lot listed successfully on Oomisha360 Marketplace!");
+      setStatusMsg("Harvest lot listed successfully on Gebere 360 Marketplace!");
       setTimeout(() => setStatusMsg(null), 3000);
     } catch (err: any) {
       setStatusMsg(err.message || "Failed to create listing.");
@@ -165,15 +169,15 @@ export default function MarketplacePage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#1A1A2E] tracking-tight">
-            Agricultural Marketplace
+            {t.marketplace.title}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Direct B2B trade connecting cooperative unions with grain millers, exporters, and processors.
+            {t.marketplace.subtitle}
           </p>
         </div>
 
@@ -182,7 +186,7 @@ export default function MarketplacePage() {
           className="inline-flex items-center gap-2 bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition-all shadow-sm self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
-          <span>{isCreating ? "Close Form" : "List Harvest Lot"}</span>
+          <span>{isCreating ? t.actions.cancel : t.marketplace.listProduce}</span>
         </button>
       </div>
 

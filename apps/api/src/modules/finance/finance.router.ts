@@ -103,3 +103,63 @@ financeRouter.get('/summary', requireAuth, async (req: Request, res: Response, n
     next(err);
   }
 });
+
+// GET /api/v1/finance/reports - Historical P&L breakdown by season and farm
+financeRouter.get('/reports', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+
+    let userExpenses: Expense[] = [];
+    let userHarvests: Harvest[] = [];
+
+    if (isUsingPrisma && prisma) {
+      const [expenses, harvests] = await Promise.all([
+        prisma.expense.findMany({ where: { userId } }),
+        prisma.harvest.findMany({ where: { userId } }),
+      ]);
+      userExpenses = expenses.map((e: any) => ({
+        ...e,
+        date: e.date.toISOString().split('T')[0],
+        createdAt: e.createdAt.toISOString(),
+        updatedAt: e.updatedAt.toISOString(),
+      }));
+      userHarvests = harvests.map((h: any) => ({
+        ...h,
+        harvestDate: h.harvestDate.toISOString().split('T')[0],
+        createdAt: h.createdAt.toISOString(),
+        updatedAt: h.updatedAt.toISOString(),
+      }));
+    } else {
+      userExpenses = Array.from(inMemoryStore.expenses.values()).filter((e) => e.userId === userId);
+      userHarvests = Array.from(inMemoryStore.harvests.values()).filter((h) => h.userId === userId);
+    }
+
+    const seasons = Array.from(
+      new Set([...userExpenses.map((e) => e.season), ...userHarvests.map((h) => h.season)])
+    ).sort();
+
+    const bySeason = seasons.map((seasonName) => {
+      const sExpenses = userExpenses.filter((e) => e.season === seasonName);
+      const sHarvests = userHarvests.filter((h) => h.season === seasonName);
+      const summary = calculateFinanceSummary(sExpenses, sHarvests, 0, 'ETB', undefined, seasonName);
+      return {
+        season: seasonName,
+        totalExpensesETB: summary.totalCost,
+        totalRevenueETB: summary.totalRevenue,
+        netProfitETB: summary.estimatedProfit,
+        expenseCount: summary.expenseCount,
+        harvestCount: summary.harvestCount,
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        seasons: bySeason,
+        overall: calculateFinanceSummary(userExpenses, userHarvests, 0, 'ETB'),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});

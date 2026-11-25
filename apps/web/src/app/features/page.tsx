@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Platform Capabilities & Modules — Gebere Vision AI",
+  title: "Platform Capabilities & Modules — Gebere 360",
   description: "Comprehensive agricultural tools built for Ethiopian farmers, cooperatives, and agribusinesses.",
 };
 

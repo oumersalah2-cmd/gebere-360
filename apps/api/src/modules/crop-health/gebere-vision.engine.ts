@@ -1,4 +1,9 @@
-import { DiagnosisRequestInput, DiagnosisResult } from '@gebere/shared';
+import {
+  DiagnosisRequestInput,
+  DiagnosisResult,
+  AgriculturalQuestionInput,
+  AgriculturalAnswerResult,
+} from '@gebere/shared';
 
 interface DiseaseKnowledgeItem {
   diseaseName: string;
@@ -241,6 +246,75 @@ export class GebereVisionAIEngine {
     }
 
     return this.diagnoseOfflineEIAR(req);
+  }
+
+  /**
+   * Answers general agricultural management and crop guidance questions.
+   */
+  public static async answerAgriculturalQuestion(
+    input: AgriculturalQuestionInput
+  ): Promise<AgriculturalAnswerResult> {
+    const disclaimer =
+      'Advisory Notice: Recommendations are general agronomic guidance and should be adapted to local woreda conditions with your Kebele Development Agent (DA).';
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (apiKey && apiKey.trim().length > 10) {
+      try {
+        const prompt = `You are Gebere Vision AI, an agricultural advisor for Ethiopian farmers (especially Oromia).
+Question: ${input.question}
+Crop context: ${input.crop || 'General'}
+Region: ${input.region || 'Ethiopia'}
+Language code: ${input.language || 'en'}
+Return JSON only with fields:
+{
+  "answer": "Clear, practical advice",
+  "recommendations": ["Step 1", "Step 2", "Step 3"]
+}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.3, responseMimeType: 'application/json' },
+          }),
+        });
+        if (response.ok) {
+          const data: any = await response.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawText) {
+            const parsed = JSON.parse(rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim());
+            return {
+              id: `qa-gemini-${Date.now()}`,
+              question: input.question,
+              answer: parsed.answer || 'Please consult your local agricultural extension office.',
+              recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+              crop: input.crop,
+              sourceAuthority: 'Gebere Vision AI (Gemini Core) & EIAR Guidelines',
+              disclaimer,
+              timestamp: new Date().toISOString(),
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('[GebereVisionAI Q&A] Gemini unavailable, using EIAR knowledge fallback:', err);
+      }
+    }
+
+    return {
+      id: `qa-eiar-${Date.now()}`,
+      question: input.question,
+      answer: `For ${input.crop || 'Ethiopian highland crops'} in ${input.region || 'Oromia'}, follow Integrated Pest Management (IPM), use certified EIAR/JARC/DZARC seed varieties, apply balanced NPS/Urea fertilization based on soil testing, and maintain proper field drainage.`,
+      recommendations: [
+        'Use certified, disease-resistant seeds adapted to your woreda altitude.',
+        'Rotate cereals (teff, wheat, barley) with legumes (chickpea, faba bean) to restore soil nitrogen.',
+        'Monitor fields weekly and consult your Kebele Development Agent (DA) before chemical spraying.',
+      ],
+      crop: input.crop,
+      sourceAuthority: 'Ethiopian Institute of Agricultural Research (EIAR) Advisory Baseline',
+      disclaimer,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   private static async diagnoseWithGemini(req: DiagnosisRequestInput, apiKey: string): Promise<DiagnosisResult | null> {

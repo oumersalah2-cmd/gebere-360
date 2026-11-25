@@ -5,6 +5,7 @@ import {
   MarketplaceListingCreateSchema,
   MarketplaceListingUpdateSchema,
   MarketplaceInquiryCreateSchema,
+  MarketplaceInquiryUpdateSchema,
   MarketplaceListing,
   MarketplaceInquiry,
 } from '@gebere/shared';
@@ -310,6 +311,88 @@ marketplaceRouter.post(
         message: 'Inquiry submitted directly to the seller/cooperative.',
         data: newInquiry,
       });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// GET /api/v1/marketplace/inquiries - List inquiries received on seller's listings (or sent by buyer)
+marketplaceRouter.get('/inquiries', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+
+    if (isUsingPrisma && prisma) {
+      const inquiries = await prisma.marketplaceInquiry.findMany({
+        where: {
+          OR: [{ listing: { sellerId: userId } }, { senderId: userId }],
+        },
+        include: {
+          listing: {
+            select: { id: true, commodityName: true, variety: true, sellerId: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      res.json({ success: true, data: inquiries });
+      return;
+    }
+
+    const userListingIds = new Set(
+      Array.from(inMemoryStore.listings.values())
+        .filter((l) => l.sellerId === userId)
+        .map((l) => l.id)
+    );
+
+    const inquiries = Array.from(inMemoryStore.inquiries.values())
+      .filter((inq) => userListingIds.has(inq.listingId) || inq.senderId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    res.json({ success: true, data: inquiries });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/v1/marketplace/inquiries/:inquiryId - Seller updates inquiry status
+marketplaceRouter.patch(
+  '/inquiries/:inquiryId',
+  requireAuth,
+  validateBody(MarketplaceInquiryUpdateSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const inquiryId = String(req.params.inquiryId);
+      const userId = req.user!.id;
+      const { status } = req.body;
+
+      if (isUsingPrisma && prisma) {
+        const existing = await prisma.marketplaceInquiry.findUnique({
+          where: { id: inquiryId },
+          include: { listing: true },
+        });
+        if (!existing) throw new NotFoundError('Inquiry not found');
+        if (existing.listing.sellerId !== userId) {
+          throw new ForbiddenError('Only the listing seller can update inquiry status.');
+        }
+
+        const updated = await prisma.marketplaceInquiry.update({
+          where: { id: inquiryId },
+          data: { status },
+        });
+        res.json({ success: true, data: updated });
+        return;
+      }
+
+      const existing = inMemoryStore.inquiries.get(inquiryId);
+      if (!existing) throw new NotFoundError('Inquiry not found');
+      const listing = inMemoryStore.listings.get(existing.listingId);
+      if (!listing || listing.sellerId !== userId) {
+        throw new ForbiddenError('Only the listing seller can update inquiry status.');
+      }
+
+      const updated: MarketplaceInquiry = { ...existing, status };
+      inMemoryStore.inquiries.set(inquiryId, updated);
+      res.json({ success: true, data: updated });
     } catch (err) {
       next(err);
     }

@@ -28,6 +28,8 @@ import {
   LandRecord
 } from "@gebere/shared";
 import { apiClient } from "@/lib/api-client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations } from "@/lib/i18n";
 
 // Dynamically load Leaflet GPS map drawer to avoid SSR issues
 const PlotMapDrawer = dynamic(() => import("@/components/PlotMapDrawer"), {
@@ -47,6 +49,8 @@ const PRIORITY_CROPS = [
 ];
 
 export default function LandCalculatorPage() {
+  const { language } = useApp();
+  const tLand = platformTranslations[language].land;
   const [activeTab, setActiveTab] = useState<"rectangular" | "map">("rectangular");
 
   // Rectangular calculation form state (Default matches Image 2A)
@@ -163,7 +167,7 @@ export default function LandCalculatorPage() {
         lengthUnit: activeTab === "rectangular" ? lengthUnit : undefined,
         widthUnit: activeTab === "rectangular" ? widthUnit : undefined,
         coordinates: activeTab === "map" ? mapResult?.coordinates : undefined,
-        notes: `Recorded via Oomisha360 Land Calculator (${activeTab}). Crop: ${selectedCrop}.`,
+        notes: `Recorded via Gebere 360 Land Calculator (${activeTab}). Crop: ${selectedCrop}.`,
       });
 
       if (saved) {
@@ -236,10 +240,10 @@ export default function LandCalculatorPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#1A1A2E] tracking-tight">
-            Land Calculator
+            {tLand.title}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Precision rectangular dimensional math & GPS polygon surface estimation.
+            {tLand.subtitle}
           </p>
         </div>
 

@@ -11,7 +11,6 @@ import {
   CropHealthDiagnosisNotice,
   CropProfile,
   ZoneItem,
-  RegionLocationData,
   EthiopiaRegionSummary,
   DiagnosisRequestInput,
   DiagnosisResult,
@@ -23,6 +22,11 @@ import {
   CropProtectionListing,
   CropProtectionGuidanceResult,
   CropProtectionInquiryInput,
+  FarmActivity,
+  FarmPerformance,
+  NotificationItem,
+  AgriculturalQuestionInput,
+  AgriculturalAnswerResult,
 } from '@gebere/shared';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
@@ -527,5 +531,128 @@ export const apiClient = {
       return { success: true, message: (res as any).message || 'Inquiry transmitted.' };
     }
     return { success: false, error: res.error?.message || 'Failed to submit inquiry' };
+  },
+
+  // Farm Activities & Performance
+  async getFarmActivities(farmId: string): Promise<FarmActivity[]> {
+    const res = await apiRequest<FarmActivity[]>(`/farms/${farmId}/activities`);
+    return res.success && res.data ? res.data : [];
+  },
+
+  async createFarmActivity(
+    farmId: string,
+    input: Omit<FarmActivity, 'id' | 'userId' | 'farmId' | 'createdAt' | 'updatedAt'>
+  ): Promise<FarmActivity> {
+    const res = await apiRequest<FarmActivity>(`/farms/${farmId}/activities`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+    if (res.success && res.data) return res.data;
+    throw new Error(res.error?.message || 'Failed to create farm activity.');
+  },
+
+  async deleteFarmActivity(farmId: string, activityId: string): Promise<boolean> {
+    const res = await apiRequest(`/farms/${farmId}/activities/${activityId}`, { method: 'DELETE' });
+    return res.success;
+  },
+
+  async getFarmPerformance(farmId: string): Promise<FarmPerformance | null> {
+    const res = await apiRequest<FarmPerformance>(`/farms/${farmId}/performance`);
+    return res.success && res.data ? res.data : null;
+  },
+
+  // Expense & Harvest Updates + Reports
+  async updateExpense(id: string, updates: Partial<Expense>): Promise<Expense | null> {
+    const res = await apiRequest<Expense>(`/expenses/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+    return res.success && res.data ? res.data : null;
+  },
+
+  async updateHarvest(id: string, updates: Partial<Harvest>): Promise<Harvest | null> {
+    const res = await apiRequest<Harvest>(`/harvests/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+    return res.success && res.data ? res.data : null;
+  },
+
+  async getFinanceReports() {
+    const res = await apiRequest<{
+      seasons: Array<{
+        season: string;
+        totalExpensesETB: number;
+        totalRevenueETB: number;
+        netProfitETB: number;
+        expenseCount: number;
+        harvestCount: number;
+      }>;
+      overall: FinanceSummary;
+    }>('/finance/reports');
+    return res.success && res.data ? res.data : null;
+  },
+
+  // Marketplace Inquiry Management
+  async getMarketplaceInquiries(): Promise<MarketplaceInquiry[]> {
+    const res = await apiRequest<MarketplaceInquiry[]>('/marketplace/inquiries');
+    return res.success && res.data ? res.data : [];
+  },
+
+  async updateMarketplaceInquiryStatus(
+    inquiryId: string,
+    status: 'pending' | 'read' | 'responded'
+  ): Promise<MarketplaceInquiry | null> {
+    const res = await apiRequest<MarketplaceInquiry>(`/marketplace/inquiries/${inquiryId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+    return res.success && res.data ? res.data : null;
+  },
+
+  // Gebere Vision AI Q&A
+  async askAgriculturalQuestion(input: AgriculturalQuestionInput): Promise<AgriculturalAnswerResult | null> {
+    const res = await apiRequest<AgriculturalAnswerResult>('/crop-health/ask', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+    return res.success && res.data ? res.data : null;
+  },
+
+  // Notifications
+  async getNotifications(): Promise<{ items: NotificationItem[]; unreadCount: number }> {
+    const res = await apiRequest<NotificationItem[]>('/notifications');
+    return {
+      items: res.success && res.data ? res.data : [],
+      unreadCount: (res as any).unreadCount ?? 0,
+    };
+  },
+
+  async markNotificationRead(id: string): Promise<boolean> {
+    const res = await apiRequest(`/notifications/${id}/read`, { method: 'PATCH' });
+    return res.success;
+  },
+
+  async markAllNotificationsRead(): Promise<boolean> {
+    const res = await apiRequest('/notifications/read-all', { method: 'PATCH' });
+    return res.success;
+  },
+
+  async deleteNotification(id: string): Promise<boolean> {
+    const res = await apiRequest(`/notifications/${id}`, { method: 'DELETE' });
+    return res.success;
+  },
+
+  // Auth Helpers
+  async forgotPassword(email: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    const res = await apiRequest<{ message?: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+    return {
+      success: res.success,
+      message: (res as any).message || 'Reset link requested.',
+      error: res.error?.message,
+    };
   },
 };

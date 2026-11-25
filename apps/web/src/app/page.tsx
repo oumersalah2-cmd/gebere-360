@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -11,43 +13,71 @@ import {
   Store,
   Tractor,
 } from "lucide-react";
-
-const services = [
-  {
-    icon: ScanLine,
-    eyebrow: "01 / Intelligence",
-    title: "See problems earlier",
-    description:
-      "Turn a crop photo into a practical scouting brief with Gebere Vision AI, built for the realities of Ethiopian fields.",
-    href: "/gebere-vision-ai",
-  },
-  {
-    icon: Map,
-    eyebrow: "02 / Field operations",
-    title: "Know every plot",
-    description:
-      "Map land, register farms, and keep crop activity in one dependable workspace your team can use every season.",
-    href: "/farms",
-  },
-  {
-    icon: BarChart3,
-    eyebrow: "03 / Farm economics",
-    title: "Grow with clarity",
-    description:
-      "Track expenses, harvests, and margins in ETB so each decision is grounded in your own numbers.",
-    href: "/finance",
-  },
-  {
-    icon: Store,
-    eyebrow: "04 / Market access",
-    title: "Move harvest forward",
-    description:
-      "Connect quality produce with buyers and cooperative partners through a focused B2B marketplace.",
-    href: "/marketplace",
-  },
-];
+import { useApp } from "@/context/AppContext";
+import { platformTranslations } from "@/lib/i18n";
 
 export default function Home() {
+  const { language } = useApp();
+  const t = platformTranslations[language];
+
+  const services = [
+    {
+      icon: ScanLine,
+      eyebrow: language === "om" ? "01 / Hubannoo" : language === "am" ? "01 / ብልህነት" : "01 / Intelligence",
+      title: language === "om" ? "Rakkoo dursii argi" : language === "am" ? "ችግሮችን አስቀድመው ይወቁ" : "See problems earlier",
+      description:
+        language === "om"
+          ? "Suuraa midhaanii gara qorannoo maasii hojiirra ooluutti jijjiiri — Gebere Vision AI qonna Itoophiyaatiif kan qophaa'e."
+          : language === "am"
+          ? "የሰብል ፎቶን ለኢትዮጵያ እርሻዎች በተዘጋጀው Gebere Vision AI አማካኝነት ወደ ተግባራዊ የምርመራ ውጤት ይቀይሩ።"
+          : "Turn a crop photo into a practical scouting brief with Gebere Vision AI, built for the realities of Ethiopian fields.",
+      href: "/gebere-vision-ai",
+    },
+    {
+      icon: Map,
+      eyebrow: language === "om" ? "02 / Hojii Maasii" : language === "am" ? "02 / የማሳ ሥራ" : "02 / Field operations",
+      title: language === "om" ? "Lafa hunda beeki" : language === "am" ? "እያንዳንዱን ማሳ ይወቁ" : "Know every plot",
+      description:
+        language === "om"
+          ? "Lafa safaradhu, maasii galmeessi, hojii midhaanii waqtii hunda bakka tokkotti to'adhu."
+          : language === "am"
+          ? "መሬት ይለኩ፣ ማሳዎችን ይመዝግቡ እና የሰብል እንቅስቃሴዎችን በአንድ አስተማማኝ ቦታ ይያዙ።"
+          : "Map land, register farms, and keep crop activity in one dependable workspace your team can use every season.",
+      href: "/farms",
+    },
+    {
+      icon: BarChart3,
+      eyebrow: language === "om" ? "03 / Diinagdee Maasii" : language === "am" ? "03 / የማሳ ኢኮኖሚ" : "03 / Farm economics",
+      title: language === "om" ? "Ifaa ta'een guddisi" : language === "am" ? "በግልጽ እቅድ ያሳድጉ" : "Grow with clarity",
+      description:
+        language === "om"
+          ? "Baasiiwwan, oomisha sassaabamee fi bu'aa ETB'n hordofii murtoo sirrii fudhadhu."
+          : language === "am"
+          ? "ወጪዎችን፣ ምርትን እና ትርፍን በETB ይከታተሉ፤ እያንዳንዱን ውሳኔ በራስዎ ቁጥር ይደግፉ።"
+          : "Track expenses, harvests, and margins in ETB so each decision is grounded in your own numbers.",
+      href: "/finance",
+    },
+    {
+      icon: Store,
+      eyebrow: language === "om" ? "04 / Carraa Gabaa" : language === "am" ? "04 / የገበያ መዳረሻ" : "04 / Market access",
+      title: language === "om" ? "Oomisha gabaatti dhiyeessi" : language === "am" ? "ምርትዎን ወደ ገበያ ያቅርቡ" : "Move harvest forward",
+      description:
+        language === "om"
+          ? "Oomisha qulqulluu bittootaa fi waldaalee waliin kallattiin gabaa B2B irratti walqunnamsiisi."
+          : language === "am"
+          ? "ጥራት ያለውን ምርት ከገዢዎች እና ከኅብረት ሥራ ማኅበራት ጋር በB2B ገበያ በቀጥታ ያገናኙ።"
+          : "Connect quality produce with buyers and cooperative partners through a focused B2B marketplace.",
+      href: "/marketplace",
+    },
+  ];
+
+  const highlights =
+    language === "om"
+      ? ["Salphaatti fayyadami", "Daataa kee to'adhu", "Garee maasiif qophaa'e"]
+      : language === "am"
+      ? ["ለአጠቃቀም ቀላል", "መረጃዎ በእጅዎ", "ለመስክ ቡድኖች የተሰራ"]
+      : ["Simple by design", "Data you control", "Made for field teams"];
+
   return (
     <main className="space-y-24 pb-10">
       <section className="relative overflow-hidden rounded-[2rem] bg-[#123b2b] text-white shadow-[0_24px_70px_rgba(18,59,43,0.2)]">
@@ -56,25 +86,25 @@ export default function Home() {
           <div className="max-w-2xl">
             <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d9f99d] backdrop-blur-sm">
               <Sprout className="h-4 w-4" />
-              Built for Ethiopia&apos;s growers
+              {t.home.badge}
             </div>
             <h1 className="max-w-xl text-5xl font-semibold leading-[0.98] tracking-[-0.06em] sm:text-7xl">
-              Better farming starts with a clearer view.
+              {t.home.heroTitle}
             </h1>
             <p className="mt-7 max-w-lg text-base leading-7 text-[#d6e7dc] sm:text-lg">
-              Oomisha360 brings farm intelligence, field operations, crop health, and market access into one calm, practical workspace.
+              {t.home.heroDesc}
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href="/auth/register" className="group inline-flex items-center gap-3 rounded-full bg-[#d9f99d] px-6 py-3.5 text-sm font-bold text-[#123b2b] transition-transform hover:-translate-y-0.5">
-                Start your farm workspace
+                {t.home.startBtn}
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
               <Link href="/features" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10">
-                Explore the platform
+                {t.home.exploreBtn}
               </Link>
             </div>
             <div className="mt-12 flex flex-wrap gap-x-7 gap-y-3 text-xs text-[#b8d2c2]">
-              {["Simple by design", "Data you control", "Made for field teams"].map((item) => (
+              {highlights.map((item) => (
                 <span key={item} className="inline-flex items-center gap-2">
                   <Check className="h-3.5 w-3.5 text-[#d9f99d]" />
                   {item}
@@ -90,7 +120,10 @@ export default function Home() {
             <div className="absolute -bottom-5 -left-5 rounded-2xl bg-white p-4 text-[#123b2b] shadow-xl sm:-left-10">
               <div className="flex items-center gap-3">
                 <div className="rounded-xl bg-[#e8f4d0] p-2.5"><Tractor className="h-5 w-5" /></div>
-                <div><p className="text-[10px] font-bold uppercase tracking-wider text-[#69806f]">One connected view</p><p className="mt-0.5 text-sm font-bold">From soil to sale</p></div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#69806f]">{t.brandName}</p>
+                  <p className="mt-0.5 text-sm font-bold">{language === "om" ? "Biyyee irraa gara gabaatti" : language === "am" ? "ከአፈር እስከ ገበያ" : "From soil to sale"}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -99,13 +132,13 @@ export default function Home() {
 
       <section className="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-end">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#7b927e]">The Oomisha360 approach</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#7b927e]">{t.home.approachLabel}</p>
           <h2 className="mt-4 max-w-md text-4xl font-semibold leading-tight tracking-[-0.04em] text-[#123b2b] sm:text-5xl">
-            Less guesswork. More progress.
+            {t.home.approachTitle}
           </h2>
         </div>
         <p className="max-w-xl text-base leading-7 text-[#64736a] lg:ml-auto">
-          Your farm is a living system. We designed the platform to keep the important signals together, so farmers, cooperatives, and agronomists can act with confidence.
+          {t.home.approachDesc}
         </p>
       </section>
 
@@ -119,18 +152,18 @@ export default function Home() {
             <p className="mt-8 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a9d8c]">{service.eyebrow}</p>
             <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#123b2b]">{service.title}</h3>
             <p className="mt-3 max-w-md text-sm leading-6 text-[#68776d]">{service.description}</p>
-            <span className="mt-6 inline-flex items-center gap-1 text-xs font-bold text-[#286344]">Open workspace <ChevronRight className="h-3.5 w-3.5" /></span>
+            <span className="mt-6 inline-flex items-center gap-1 text-xs font-bold text-[#286344]">{t.home.openWorkspace} <ChevronRight className="h-3.5 w-3.5" /></span>
           </Link>
         ))}
       </section>
 
       <section className="grid gap-8 rounded-[1.75rem] bg-[#e8f1df] p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
-          <div className="flex items-center gap-2 text-[#286344]"><ShieldCheck className="h-5 w-5" /><span className="text-xs font-bold uppercase tracking-[0.16em]">Start with what matters</span></div>
-          <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] text-[#123b2b] sm:text-4xl">A professional operating layer for every growing season.</h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-[#5c7261]">Create your account, add your first farm, and build a reliable record of the decisions that move your harvest forward.</p>
+          <div className="flex items-center gap-2 text-[#286344]"><ShieldCheck className="h-5 w-5" /><span className="text-xs font-bold uppercase tracking-[0.16em]">{t.brandName}</span></div>
+          <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] text-[#123b2b] sm:text-4xl">{t.home.ctaTitle}</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-[#5c7261]">{t.home.ctaDesc}</p>
         </div>
-        <Link href="/auth/register" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#123b2b] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#286344]">Create your account <ArrowUpRight className="h-4 w-4" /></Link>
+        <Link href="/auth/register" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#123b2b] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#286344]">{t.home.ctaBtn} <ArrowUpRight className="h-4 w-4" /></Link>
       </section>
     </main>
   );

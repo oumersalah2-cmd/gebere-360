@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { UserProfile } from "@gebere/shared";
 import { apiClient, isDemoMode, setDemoMode, setAuthToken, clearAuthSession } from "@/lib/api-client";
 import { supabase } from "@/lib/supabase/client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations, SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import {
   User,
   ShieldCheck,
@@ -17,6 +19,8 @@ import {
 } from "lucide-react";
 
 export default function UserProfilePage() {
+  const { language, setLanguage } = useApp();
+  const t = platformTranslations[language];
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -32,7 +36,7 @@ export default function UserProfilePage() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-    } catch {}
+    } catch { }
     clearAuthSession();
     router.push("/auth/login");
   };
@@ -87,15 +91,35 @@ export default function UserProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      
+
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-[#1A1A2E] tracking-tight">
-          Farmer Profile & Settings
-        </h1>
-        <p className="text-xs text-gray-500 mt-1">
-          Oomisha360 account settings, cooperative union affiliations, and evaluation persona.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-[#1A1A2E] tracking-tight">
+            {t.nav.profile} &amp; {t.brandName}
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Gebere 360 account settings, cooperative union affiliations, and language preferences.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 bg-white border border-[#E5DFD3] rounded-xl px-3 py-2">
+          <span className="text-xs font-semibold text-gray-600">{t.auth.preferredLang}:</span>
+          {SUPPORTED_LANGUAGES.map((langOpt) => (
+            <button
+              key={langOpt.code}
+              type="button"
+              onClick={() => setLanguage(langOpt.code)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                language === langOpt.code
+                  ? "bg-[#1B4332] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {langOpt.flag} {langOpt.nativeLabel}
+            </button>
+          ))}
+        </div>
       </div>
 
       {statusMsg && (
@@ -115,18 +139,17 @@ export default function UserProfilePage() {
         </div>
 
         <p className="text-xs text-gray-500">
-          Switch roles to experience Oomisha360 from either smallholder farmer or cooperative union perspectives:
+          Switch roles to experience Gebere 360 from either smallholder farmer or cooperative union perspectives:
         </p>
 
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
             onClick={() => handleRoleToggle("farmer")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-              role === "farmer"
-                ? "bg-[#2D6A4F] text-white shadow-sm"
-                : "bg-[#F5F0E8] text-gray-700 hover:bg-[#EAE4D9]"
-            }`}
+            className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${role === "farmer"
+              ? "bg-[#2D6A4F] text-white shadow-sm"
+              : "bg-[#F5F0E8] text-gray-700 hover:bg-[#EAE4D9]"
+              }`}
           >
             Farmer Persona (Abebe Demisse - Bale Estate)
           </button>
@@ -134,11 +157,10 @@ export default function UserProfilePage() {
           <button
             type="button"
             onClick={() => handleRoleToggle("cooperative_manager")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-              role === "cooperative_manager"
-                ? "bg-[#2D6A4F] text-white shadow-sm"
-                : "bg-[#F5F0E8] text-gray-700 hover:bg-[#EAE4D9]"
-            }`}
+            className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${role === "cooperative_manager"
+              ? "bg-[#2D6A4F] text-white shadow-sm"
+              : "bg-[#F5F0E8] text-gray-700 hover:bg-[#EAE4D9]"
+              }`}
           >
             Cooperative Union Persona (Trade Manager - Ada'a Union)
           </button>

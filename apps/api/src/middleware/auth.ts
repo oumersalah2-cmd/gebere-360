@@ -2,11 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config';
 import { UnauthorizedError, ForbiddenError } from './errorHandler';
+import type { UserRole } from '@gebere/shared';
 
 export interface AuthenticatedUser {
   id: string;
   email: string;
-  role: 'farmer' | 'cooperative_manager' | 'buyer' | 'agronomist';
+  role: UserRole;
 }
 
 declare global {
@@ -74,10 +75,11 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     // In development/test mode, allow explicitly tagged demo tokens
     if (!config.isProduction && (token === 'demo-token' || token.startsWith('demo-user-'))) {
       const id = demoUserId || (token.startsWith('demo-user-') ? token.replace('demo-user-', '') : 'usr-demo-farmer-1');
+      const demoRoleHeader = req.headers['x-demo-role'] as AuthenticatedUser['role'] | undefined;
       req.user = {
         id,
-        email: id === 'usr-demo-farmer-1' ? 'farmer.demo@geberevision.et' : `${id}@geberevision.et`,
-        role: 'farmer',
+        email: id === 'usr-demo-farmer-1' ? 'farmer.demo@gebere360.et' : `${id}@gebere360.et`,
+        role: demoRoleHeader || 'farmer',
       };
       return next();
     }
@@ -185,4 +187,22 @@ export function requireBotApiKey(req: Request, res: Response, next: NextFunction
   }
 
   next();
+}
+
+/**
+ * Role-Based Access Control (RBAC) middleware.
+ * Ensures req.user has one of the authorized roles.
+ */
+export function requireRole(...allowedRoles: UserRole[]) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      return next(new UnauthorizedError('Authentication is required.'));
+    }
+    if (!allowedRoles.includes(req.user.role)) {
+      return next(
+        new ForbiddenError(`Access denied. Required role: ${allowedRoles.join(' or ')}.`)
+      );
+    }
+    next();
+  };
 }

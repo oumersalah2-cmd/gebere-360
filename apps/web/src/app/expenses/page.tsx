@@ -11,6 +11,8 @@ import {
   calculateCategoryBreakdown,
 } from "@gebere/shared";
 import { apiClient } from "@/lib/api-client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations } from "@/lib/i18n";
 import {
   Wallet,
   Plus,
@@ -26,6 +28,8 @@ import {
 } from "lucide-react";
 
 export default function FarmExpensesPage() {
+  const { language } = useApp();
+  const t = platformTranslations[language];
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [farms, setFarms] = useState<Farm[]>([]);
   const [selectedFarm, setSelectedFarm] = useState<string>("All");
@@ -113,10 +117,10 @@ export default function FarmExpensesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#1A1A2E] tracking-tight">
-            Farm Expenses
+            {t.finance.expensesTitle}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Track input expenditures across 9 agricultural categories in Ethiopian Birr (ETB).
+            {t.finance.expensesSubtitle}
           </p>
         </div>
 
@@ -125,7 +129,7 @@ export default function FarmExpensesPage() {
           className="inline-flex items-center gap-2 bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition-all shadow-sm self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
-          <span>{isAdding ? "Cancel Entry" : "Log New Input"}</span>
+          <span>{isAdding ? t.actions.cancel : t.finance.addExpense}</span>
         </button>
       </div>
 

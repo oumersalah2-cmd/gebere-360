@@ -16,11 +16,22 @@ export type ExpenseCategory =
   | 'other';
 
 
+export type UserRole = 'farmer' | 'cooperative_manager' | 'buyer' | 'agronomist' | 'admin';
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface RectangularCalculationInput {
   length: number;
   width: number;
   lengthUnit: MeasurementUnit;
   widthUnit: MeasurementUnit;
+  pricePerSquareMeter?: number;
+  pricePerHectare?: number;
 }
 
 export interface LandAreaResult {
@@ -29,6 +40,9 @@ export interface LandAreaResult {
   acres: number;
   normalizedLengthMeters?: number;
   normalizedWidthMeters?: number;
+  pricePerSquareMeter?: number | null;
+  pricePerHectare?: number | null;
+  estimatedValueETB?: number | null;
   isEstimate: boolean;
   disclaimer: string;
 }
@@ -40,7 +54,11 @@ export interface PolygonCoordinates {
 
 export interface PolygonCalculationInput {
   coordinates: PolygonCoordinates[];
+  pricePerSquareMeter?: number;
+  pricePerHectare?: number;
 }
+
+export type LandMeasurementSource = 'manual' | 'map_polygon' | 'gps_walk';
 
 export interface LandRecord {
   id: string;
@@ -49,6 +67,8 @@ export interface LandRecord {
   plotName: string;
   crop?: string | null;
   calculationMethod: 'rectangular' | 'polygon';
+  measurementSource?: LandMeasurementSource;
+  gpsAccuracyMeters?: number | null;
   length?: number | null;
   width?: number | null;
   lengthUnit?: MeasurementUnit | null;
@@ -57,10 +77,52 @@ export interface LandRecord {
   areaSquareMeters: number;
   areaHectares: number;
   areaAcres: number;
+  pricePerSquareMeter?: number | null;
+  pricePerHectare?: number | null;
+  estimatedValueETB?: number | null;
   isEstimate: boolean;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type FarmActivityType =
+  | 'planting'
+  | 'fertilizing'
+  | 'weeding'
+  | 'spraying'
+  | 'irrigation'
+  | 'scouting'
+  | 'harvesting'
+  | 'other';
+
+export interface FarmActivity {
+  id: string;
+  userId: string;
+  farmId: string;
+  activityType: FarmActivityType;
+  title: string;
+  description?: string | null;
+  activityDate: string;
+  status: 'planned' | 'in_progress' | 'completed';
+  costETB?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FarmPerformance {
+  farmId: string;
+  farmName: string;
+  totalHectares: number;
+  measuredHectares: number;
+  totalExpensesETB: number;
+  totalRevenueETB: number;
+  netProfitETB: number;
+  roiPercent: number;
+  expenseCount: number;
+  harvestCount: number;
+  activityCount: number;
+  completedActivityCount: number;
 }
 
 export interface Farm {
@@ -74,6 +136,8 @@ export interface Farm {
   soilType?: string | null;
   totalHectares: number;
   primaryCrop?: string | null;
+  plantingDate?: string | null;
+  harvestingDate?: string | null;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -207,9 +271,20 @@ export interface UserProfile {
   zone?: string | null;
   woreda?: string | null;
   cooperativeName?: string | null;
-  role: 'farmer' | 'cooperative_manager' | 'buyer' | 'agronomist';
+  role: UserRole;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'diagnosis' | 'marketplace' | 'farm' | 'finance' | 'system';
+  read: boolean;
+  link?: string | null;
+  createdAt: string;
 }
 
 export interface CropHealthDiagnosisNotice {
@@ -304,6 +379,25 @@ export interface DiagnosisResult {
   extensionOfficeEscalationRecommended: boolean;
   sourceAuthority: string;
   imageUrl?: string;
+  disclaimer?: string;
+}
+
+export interface AgriculturalQuestionInput {
+  question: string;
+  crop?: string;
+  region?: string;
+  language?: 'en' | 'om' | 'am';
+}
+
+export interface AgriculturalAnswerResult {
+  id: string;
+  question: string;
+  answer: string;
+  recommendations: string[];
+  crop?: string;
+  sourceAuthority: string;
+  disclaimer: string;
+  timestamp: string;
 }
 
 export * from './crop-protection.js';

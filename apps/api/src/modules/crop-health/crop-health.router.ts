@@ -2,12 +2,39 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { requireBotApiKey, optionalAuth } from '../../middleware/auth';
 import { cropHealthService } from './crop-health.service';
 import { GebereVisionAIEngine } from './gebere-vision.engine';
-import { inMemoryStore, isUsingPrisma, prisma } from '../../lib/db';
+import { inMemoryStore, isUsingPrisma, prisma, ensureUserProfile } from '../../lib/db';
 import { z } from 'zod';
 import { validateBody } from '../../middleware/validate';
-import { DiagnosisRequestInput } from '@gebere/shared';
+import { BadRequestError } from '../../middleware/errorHandler';
+import { DiagnosisRequestInput, AgriculturalQuestionInput } from '@gebere/shared';
 
 export const cropHealthRouter = Router();
+
+const MAX_IMAGE_DATA_URI_BYTES = 10 * 1024 * 1024; // 10 MB limit
+const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+const AI_DISCLAIMER =
+  'Advisory Notice: AI-generated crop diagnoses and recommendations are preliminary observations and do not replace verification by a qualified agricultural expert or Kebele Development Agent (DA).';
+
+function validateCropImage(imageUrl?: string): void {
+  if (!imageUrl) return;
+  if (imageUrl.startsWith('data:')) {
+    const match = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) {
+      throw new BadRequestError('Invalid image data URI format.');
+    }
+    const mimeType = match[1].toLowerCase();
+    if (!ALLOWED_IMAGE_MIME_TYPES.includes(mimeType)) {
+      throw new BadRequestError('Unsupported image format. Allowed formats: JPEG, PNG, WebP.');
+    }
+    const approxBytes = Math.ceil((match[2].length * 3) / 4);
+    if (approxBytes > MAX_IMAGE_DATA_URI_BYTES) {
+      throw new BadRequestError('Image file size exceeds the 10 MB maximum limit.');
+    }
+  } else if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+    throw new BadRequestError('imageUrl must be a valid HTTP(S) URL or base64 image data URI.');
+  }
+}
 
 const DiagnosisRequestSchema = z.object({
   crop: z.string().min(1, 'Crop name is required'),
@@ -15,6 +42,13 @@ const DiagnosisRequestSchema = z.object({
   zone: z.string().optional(),
   imageUrl: z.string().optional(),
   observedSymptoms: z.string().optional(),
+});
+
+const AgriculturalQuestionSchema = z.object({
+  question: z.string().min(5, 'Question must be at least 5 characters').max(1500),
+  crop: z.string().max(80).optional(),
+  region: z.string().max(80).optional(),
+  language: z.enum(['en', 'om', 'am']).optional().default('en'),
 });
 
 const RequestExpertSchema = z.object({
@@ -59,17 +93,33 @@ cropHealthRouter.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const input: DiagnosisRequestInput = req.body;
-      const result = await GebereVisionAIEngine.analyzeCrop(input);
+      validateCropImage(input.imageUrl);
+
+      const rawResult = await GebereVisionAIEngine.analyzeCrop(input);
+      const result = {
+        ...rawResult,
+        disclaimer: AI_DISCLAIMER,
+      };
+      const userId = req.user?.id || null;
 
       // Save diagnostic log
       if (isUsingPrisma && prisma) {
+        if (req.user) {
+          await ensureUserProfile(req.user);
+        }
         await prisma.cropDiagnosisLog.create({
           data: {
+            userId,
             source: 'gebere_vision_ai_web',
             crop: result.crop,
             symptoms: result.observedSymptoms.join('; '),
             diseaseIdentified: result.diseaseName,
+            scientificName: result.scientificName,
+            severity: result.severity,
             confidence: result.confidenceScore,
+            managementAdvice: result.approvedManagementAdvice,
+            imageUrl: input.imageUrl && !input.imageUrl.startsWith('data:') ? input.imageUrl : null,
+            disclaimer: AI_DISCLAIMER,
             region: input.region || null,
             status: result.status,
           },
@@ -77,6 +127,7 @@ cropHealthRouter.post(
       } else {
         inMemoryStore.diagnosisLogs.unshift({
           ...result,
+          userId,
           region: input.region,
           zone: input.zone,
           source: 'gebere_vision_ai_web',
@@ -90,19 +141,42 @@ cropHealthRouter.post(
   }
 );
 
-// GET /api/v1/crop-health/history - Retrieve recent diagnostic scan records
+// POST /api/v1/crop-health/ask - Agricultural advisory Q&A
+cropHealthRouter.post(
+  '/ask',
+  optionalAuth,
+  validateBody(AgriculturalQuestionSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const input: AgriculturalQuestionInput = req.body;
+      const answer = await GebereVisionAIEngine.answerAgriculturalQuestion(input);
+      res.status(200).json({ success: true, data: answer });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// GET /api/v1/crop-health/history - Retrieve diagnostic scan records (scoped to user when authenticated)
 cropHealthRouter.get('/history', optionalAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const userId = req.user?.id;
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '10'), 10)));
+
     if (isUsingPrisma && prisma) {
       const logs = await prisma.cropDiagnosisLog.findMany({
-        take: 10,
+        where: userId ? { userId } : {},
+        take: limit,
         orderBy: { createdAt: 'desc' },
       });
       res.json({ success: true, count: logs.length, data: logs });
       return;
     }
 
-    const logs = inMemoryStore.diagnosisLogs.slice(0, 10);
+    const filtered = userId
+      ? inMemoryStore.diagnosisLogs.filter((l) => !l.userId || l.userId === userId)
+      : inMemoryStore.diagnosisLogs;
+    const logs = filtered.slice(0, limit);
     res.json({ success: true, count: logs.length, data: logs });
   } catch (err) {
     next(err);

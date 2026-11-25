@@ -24,6 +24,9 @@ model UserProfile {
   landRecords     LandRecord[]
   expenses        Expense[]
   harvests        Harvest[]
+  farmActivities  FarmActivity[]
+  notifications   Notification[]
+  diagnosisLogs   CropDiagnosisLog[]
   listings        MarketplaceListing[]
   cropProtectionListings CropProtectionListing[]
 
@@ -31,51 +34,81 @@ model UserProfile {
 }
 
 model Farm {
-  id            String        @id @default(uuid())
-  userId        String
-  name          String
-  region        String
-  zone          String?
-  woreda        String?
-  kebele        String?
-  soilType      String?
-  totalHectares Float
-  primaryCrop   String?
-  notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id             String         @id @default(uuid())
+  userId         String
+  name           String
+  region         String
+  zone           String?
+  woreda         String?
+  kebele         String?
+  soilType       String?
+  totalHectares  Float
+  primaryCrop    String?
+  plantingDate   DateTime?
+  harvestingDate DateTime?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
-  user          UserProfile   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  landRecords   LandRecord[]
-  expenses      Expense[]
-  harvests      Harvest[]
+  user           UserProfile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  landRecords    LandRecord[]
+  expenses       Expense[]
+  harvests       Harvest[]
+  activities     FarmActivity[]
 
   @@index([userId])
   @@map("farms")
 }
 
-model LandRecord {
-  id                String       @id @default(uuid())
-  userId            String
-  farmId            String?
-  plotName          String
-  crop              String?
-  calculationMethod String       // rectangular or polygon
-  length            Float?
-  width             Float?
-  lengthUnit        String?      // meters, kilometers, feet
-  widthUnit         String?
-  coordinatesJson   String?      // GeoJSON polygon coordinates string
-  areaSquareMeters  Float
-  areaHectares      Float
-  areaAcres         Float
-  isEstimate        Boolean      @default(false)
-  notes             String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+model FarmActivity {
+  id           String      @id @default(uuid())
+  userId       String
+  farmId       String
+  activityType String      // planting, fertilizing, weeding, spraying, irrigation, scouting, harvesting, other
+  title        String
+  description  String?
+  activityDate DateTime    @default(now())
+  status       String      @default("planned") // planned, in_progress, completed
+  costETB      Float?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-  user              UserProfile  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  farm              Farm?        @relation(fields: [farmId], references: [id], onDelete: SetNull)
+  user         UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farm         Farm        @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([farmId])
+  @@index([activityDate])
+  @@map("farm_activities")
+}
+
+model LandRecord {
+  id                  String       @id @default(uuid())
+  userId              String
+  farmId              String?
+  plotName            String
+  crop                String?
+  calculationMethod   String       // rectangular or polygon
+  measurementSource   String       @default("manual") // manual, map_polygon, gps_walk
+  gpsAccuracyMeters   Float?
+  length              Float?
+  width               Float?
+  lengthUnit          String?      // meters, kilometers, feet
+  widthUnit           String?
+  coordinatesJson     String?      // GeoJSON polygon coordinates string
+  areaSquareMeters    Float
+  areaHectares        Float
+  areaAcres           Float
+  pricePerSquareMeter Float?
+  pricePerHectare     Float?
+  estimatedValueETB   Float?
+  isEstimate          Boolean      @default(false)
+  notes               String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  user                UserProfile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farm                Farm?        @relation(fields: [farmId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([farmId])
@@ -187,19 +220,45 @@ model MarketplaceInquiry {
 }
 
 model CropDiagnosisLog {
-  id                String    @id @default(uuid())
-  source            String    @default("telegram_bot")
+  id                String       @id @default(uuid())
+  userId            String?
+  source            String       @default("telegram_bot")
   farmerTelegramId  String?
   crop              String
   symptoms          String?
   diseaseIdentified String?
+  scientificName    String?
+  severity          String?
   confidence        Float?
+  managementAdvice  String[]     @default([])
+  imageUrl          String?
+  disclaimer        String?
   region            String?
   language          String?
-  status            String    @default("synced_from_bot")
-  createdAt         DateTime  @default(now())
+  status            String       @default("synced_from_bot")
+  createdAt         DateTime     @default(now())
 
+  user              UserProfile? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
   @@map("crop_diagnosis_logs")
+}
+
+model Notification {
+  id        String      @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String      @default("system") // diagnosis, marketplace, farm, finance, system
+  read      Boolean     @default(false)
+  link      String?
+  createdAt DateTime    @default(now())
+
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@map("notifications")
 }
 
 model CropProtectionProduct {

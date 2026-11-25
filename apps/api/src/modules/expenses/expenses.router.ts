@@ -97,6 +97,50 @@ expensesRouter.post(
   }
 );
 
+// PATCH /api/v1/expenses/:id
+expensesRouter.patch(
+  '/:id',
+  requireAuth,
+  validateBody(ExpenseUpdateSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = req.params.id as string;
+      const userId = req.user!.id;
+      const updates = req.body;
+
+      if (isUsingPrisma && prisma) {
+        const existing = await prisma.expense.findUnique({ where: { id } });
+        if (!existing) throw new NotFoundError('Expense record not found');
+        if (existing.userId !== userId) throw new ForbiddenError('You do not have permission to update this expense.');
+
+        const updated = await prisma.expense.update({
+          where: { id },
+          data: {
+            ...updates,
+            ...(updates.date ? { date: new Date(updates.date) } : {}),
+          },
+        });
+        res.json({ success: true, data: updated });
+        return;
+      }
+
+      const existing = inMemoryStore.expenses.get(id);
+      if (!existing) throw new NotFoundError('Expense record not found');
+      if (existing.userId !== userId) throw new ForbiddenError('You do not have permission to update this expense.');
+
+      const updated: Expense = {
+        ...existing,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      inMemoryStore.expenses.set(id, updated);
+      res.json({ success: true, data: updated });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 // DELETE /api/v1/expenses/:id
 expensesRouter.delete('/:id', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {

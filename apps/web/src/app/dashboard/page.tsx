@@ -8,6 +8,8 @@ import {
   LandRecord,
 } from "@gebere/shared";
 import { apiClient } from "@/lib/api-client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations } from "@/lib/i18n";
 import {
   LayoutDashboard,
   Sprout,
@@ -22,6 +24,8 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
+  const { language } = useApp();
+  const t = platformTranslations[language];
   const [farms, setFarms] = useState<Farm[]>([]);
   const [finance, setFinance] = useState<FinanceSummary | null>(null);
   const [plots, setPlots] = useState<LandRecord[]>([]);
@@ -50,10 +54,10 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#1A1A2E] tracking-tight">
-            Farm Operations Dashboard
+            {t.dashboard.title}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Centralized telemetry for registered land parcels, seasonal costs, and harvest lots.
+            {t.dashboard.subtitle}
           </p>
         </div>
 
@@ -62,14 +66,14 @@ export default function DashboardPage() {
           className="inline-flex items-center gap-2 bg-[#2D6A4F] hover:bg-[#1B4332] text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all self-start sm:self-auto"
         >
           <Sprout className="h-4 w-4" />
-          <span>Go to My Farm</span>
+          <span>{t.dashboard.goToFarm}</span>
         </Link>
       </div>
 
       {/* KPI Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white rounded-2xl shadow-sm border border-[#E5DFD3] p-5">
-          <span className="text-xs font-semibold text-gray-500 block">Registered Land</span>
+          <span className="text-xs font-semibold text-gray-500 block">{t.dashboard.registeredLand}</span>
           <div className="text-2xl font-extrabold text-[#1A1A2E] mt-1">
             {farms.reduce((acc, f) => acc + f.totalHectares, 0).toFixed(2)} Ha
           </div>
@@ -79,7 +83,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-[#E5DFD3] p-5">
-          <span className="text-xs font-semibold text-gray-500 block">Seasonal Expenses</span>
+          <span className="text-xs font-semibold text-gray-500 block">{t.dashboard.seasonalExpenses}</span>
           <div className="text-2xl font-extrabold text-red-600 mt-1">
             ETB {finance ? finance.totalCost.toLocaleString() : "0"}
           </div>
@@ -91,7 +95,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-[#E5DFD3] p-5">
-          <span className="text-xs font-semibold text-gray-500 block">Expected Revenue</span>
+          <span className="text-xs font-semibold text-gray-500 block">{t.dashboard.expectedRevenue}</span>
           <div className="text-2xl font-extrabold text-[#2D6A4F] mt-1">
             ETB {finance ? finance.totalRevenue.toLocaleString() : "0"}
           </div>

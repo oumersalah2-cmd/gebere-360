@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
-import { HarvestCreateSchema, Harvest } from '@gebere/shared';
+import { HarvestCreateSchema, HarvestUpdateSchema, Harvest } from '@gebere/shared';
 import { inMemoryStore, isUsingPrisma, prisma } from '../../lib/db';
 import { NotFoundError, ForbiddenError } from '../../middleware/errorHandler';
 
@@ -92,6 +92,50 @@ harvestsRouter.post(
 
       inMemoryStore.harvests.set(id, newHarvest);
       res.status(201).json({ success: true, data: newHarvest });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// PATCH /api/v1/harvests/:id
+harvestsRouter.patch(
+  '/:id',
+  requireAuth,
+  validateBody(HarvestUpdateSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = req.params.id as string;
+      const userId = req.user!.id;
+      const updates = req.body;
+
+      if (isUsingPrisma && prisma) {
+        const existing = await prisma.harvest.findUnique({ where: { id } });
+        if (!existing) throw new NotFoundError('Harvest record not found');
+        if (existing.userId !== userId) throw new ForbiddenError('You do not have permission to update this harvest.');
+
+        const updated = await prisma.harvest.update({
+          where: { id },
+          data: {
+            ...updates,
+            ...(updates.harvestDate ? { harvestDate: new Date(updates.harvestDate) } : {}),
+          },
+        });
+        res.json({ success: true, data: updated });
+        return;
+      }
+
+      const existing = inMemoryStore.harvests.get(id);
+      if (!existing) throw new NotFoundError('Harvest record not found');
+      if (existing.userId !== userId) throw new ForbiddenError('You do not have permission to update this harvest.');
+
+      const updated: Harvest = {
+        ...existing,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      inMemoryStore.harvests.set(id, updated);
+      res.json({ success: true, data: updated });
     } catch (err) {
       next(err);
     }

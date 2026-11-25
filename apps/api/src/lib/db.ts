@@ -1,12 +1,14 @@
 import { config } from '../config';
 import type {
   Farm,
+  FarmActivity,
   LandRecord,
   Expense,
   Harvest,
   MarketplaceListing,
   MarketplaceInquiry,
   UserProfile,
+  NotificationItem,
   CropProtectionProduct,
   CropProtectionListing,
 } from '@gebere/shared';
@@ -99,11 +101,13 @@ export async function ensureUserProfile(user: { id: string; email?: string; role
 export class InMemoryStore {
   public profiles: Map<string, UserProfile> = new Map();
   public farms: Map<string, Farm> = new Map();
+  public farmActivities: Map<string, FarmActivity> = new Map();
   public landRecords: Map<string, LandRecord> = new Map();
   public expenses: Map<string, Expense> = new Map();
   public harvests: Map<string, Harvest> = new Map();
   public listings: Map<string, MarketplaceListing> = new Map();
   public inquiries: Map<string, MarketplaceInquiry> = new Map();
+  public notifications: Map<string, NotificationItem> = new Map();
   public cropProtectionProducts: Map<string, CropProtectionProduct> = new Map();
   public cropProtectionListings: Map<string, CropProtectionListing> = new Map();
   public diagnosisLogs: Array<Record<string, unknown>> = [];

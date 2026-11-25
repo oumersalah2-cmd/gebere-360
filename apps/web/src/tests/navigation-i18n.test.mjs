@@ -93,4 +93,17 @@ describe('Navigation i18n & Hydration Consistency', () => {
     const items = getNavItems(initialLanguage);
     assert.equal(items[0].name, 'Dashboard');
   });
+
+  it('supports complete English, Afaan Oromoo, and Amharic translations in i18n dictionary', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const i18nSource = fs.readFileSync(path.resolve('src/lib/i18n.ts'), 'utf8');
+    assert.ok(i18nSource.includes("en: {"));
+    assert.ok(i18nSource.includes("om: {"));
+    assert.ok(i18nSource.includes("am: {"));
+    assert.ok(i18nSource.includes("Daashboordii"));
+    assert.ok(i18nSource.includes("ዳሽቦርድ"));
+    assert.ok(i18nSource.includes("Baga Nagaan Deebitan"));
+    assert.ok(i18nSource.includes("እንኳን በደህና ተመለሱ"));
+  });
 });

@@ -19,6 +19,10 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   apiPrefix: process.env.API_PREFIX || '/api/v1',
   frontendUrl: process.env.FRONTEND_URL || '',
+  corsOrigins: (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
   databaseUrl: process.env.DATABASE_URL || '',
   supabase: {
     url: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',

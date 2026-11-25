@@ -19,7 +19,10 @@ import { cropHealthRouter } from './modules/crop-health/crop-health.router';
 import { cropsRouter } from './modules/crops/crops.router';
 import { locationsRouter } from './modules/locations/locations.router';
 import { authRouter } from './modules/auth/auth.router';
+import { usersRouter } from './modules/users/users.router';
+import { notificationsRouter } from './modules/notifications/notifications.router';
 import { cropProtectionRouter } from './modules/crop-protection/crop-protection.router';
+import { openApiRouter } from './modules/docs/openapi.router';
 
 export function createApp(): Express {
   const app = express();
@@ -30,7 +33,10 @@ export function createApp(): Express {
   // CORS Configuration
   const allowedOrigins = [
     config.frontendUrl,
-    ...(config.isProduction ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000']),
+    ...config.corsOrigins,
+    ...(config.isProduction
+      ? []
+      : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001']),
   ].filter(Boolean);
 
   app.use(
@@ -77,9 +83,10 @@ export function createApp(): Express {
   // Root information route
   app.get('/', (req: Request, res: Response) => {
     res.json({
-      name: 'Gebere Vision AI API',
+      name: 'Gebere 360 API',
       status: 'operational',
-      documentation: `${config.apiPrefix}/health`,
+      documentation: `${config.apiPrefix}/docs`,
+      health: `${config.apiPrefix}/health`,
       version: '1.0.0',
     });
   });
@@ -88,6 +95,7 @@ export function createApp(): Express {
   const v1Router = express.Router();
   v1Router.use('/health', healthRouter);
   v1Router.use('/auth', authRouter);
+  v1Router.use('/users', usersRouter);
   v1Router.use('/profiles', profilesRouter);
   v1Router.use('/farms', farmsRouter);
   v1Router.use('/land', landRouter);
@@ -99,6 +107,8 @@ export function createApp(): Express {
   v1Router.use('/crops', cropsRouter);
   v1Router.use('/locations', locationsRouter);
   v1Router.use('/crop-protection', cropProtectionRouter);
+  v1Router.use('/notifications', notificationsRouter);
+  v1Router.use('/docs', openApiRouter);
 
   app.use(config.apiPrefix, v1Router);
 

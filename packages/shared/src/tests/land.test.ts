@@ -6,7 +6,7 @@ import {
   calculatePolygonArea,
   RECTANGULAR_DISCLAIMER,
   MAP_ESTIMATE_DISCLAIMER,
-} from '../utils/land.ts';
+} from '../utils/land.js';
 
 describe('Land Area Calculator & Unit Conversions', () => {
   describe('convertLengthToMeters', () => {
@@ -52,6 +52,22 @@ describe('Land Area Calculator & Unit Conversions', () => {
       assert.ok(Math.abs(result.acres - 2.4711) < 0.01);
       assert.equal(result.isEstimate, false);
       assert.equal(result.disclaimer, RECTANGULAR_DISCLAIMER);
+    });
+
+    it('calculates 250m x 120m plot accurately (30,000 m² = 3 hectares) with land valuation', () => {
+      const result = calculateRectangularArea({
+        length: 250,
+        width: 120,
+        lengthUnit: 'meters',
+        widthUnit: 'meters',
+        pricePerHectare: 150000,
+      });
+
+      assert.equal(result.squareMeters, 30000);
+      assert.equal(result.hectares, 3);
+      assert.equal(result.pricePerHectare, 150000);
+      assert.equal(result.pricePerSquareMeter, 15);
+      assert.equal(result.estimatedValueETB, 450000);
     });
 
     it('calculates mixed units (0.5 km length x 200 feet width)', () => {

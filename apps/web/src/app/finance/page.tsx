@@ -18,8 +18,12 @@ import {
 } from "lucide-react";
 import { Farm, FinanceSummary, VolumeUnit } from "@gebere/shared";
 import { apiClient } from "@/lib/api-client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations } from "@/lib/i18n";
 
 export default function FinanceDashboardPage() {
+  const { language } = useApp();
+  const t = platformTranslations[language];
   // Real data state
   const [farms, setFarms] = useState<Farm[]>([]);
   const [financeData, setFinanceData] = useState<FinanceSummary | null>(null);
@@ -208,15 +212,15 @@ export default function FinanceDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      
+
       {/* Page Title & Filter Bar matching Image 5 */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#1A1A2E] tracking-tight">
-            Finance & Harvest Telemetry
+            {t.finance.title}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Real-time ETB input expenses, harvest lot revenues, and net return per hectare.
+            {t.finance.subtitle}
           </p>
         </div>
 
@@ -276,7 +280,7 @@ export default function FinanceDashboardPage() {
 
       {/* Row of 4 Real KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
+
         {/* KPI 1: Total Expenses */}
         <div className="bg-white rounded-2xl shadow-sm border border-[#E5DFD3] p-5 flex flex-col justify-between">
           <div className="flex items-start gap-3">
@@ -377,10 +381,10 @@ export default function FinanceDashboardPage() {
 
       {/* Main Grid: Visual Breakdown on Left, Unified Record Entry Form on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* Left Column (8 cols): Charts & Trends */}
         <div className="lg:col-span-8 space-y-6">
-          
+
           {/* Card: Expense Breakdown */}
           <div className="bg-white rounded-2xl shadow-sm border border-[#E5DFD3] p-6 sm:p-7">
             <div className="flex items-center justify-between mb-6">
@@ -393,7 +397,7 @@ export default function FinanceDashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center justify-center">
-              
+
               {/* Donut Chart 1 */}
               <div className="flex flex-col items-center">
                 <div className="relative w-44 h-44">
@@ -425,7 +429,7 @@ export default function FinanceDashboardPage() {
                   Ethiopian Farm Economy Notes
                 </span>
                 <p className="text-xs text-gray-600 leading-relaxed">
-                  Inputs recorded in Oomisha360 are benchmarked against official wholesale market rates in Oromia.
+                  Inputs recorded in Gebere 360 are benchmarked against official wholesale market rates in Oromia.
                   Fertilizer and certified seed allocations represent standard highland agronomic practice.
                 </p>
                 <div className="pt-2 border-t border-[#D8D2C4] flex items-center justify-between text-xs font-semibold text-[#1B4332]">
@@ -453,18 +457,16 @@ export default function FinanceDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setTrendRange("Jan - June")}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                    trendRange === "Jan - June" ? "bg-[#1B4332] text-white" : "bg-[#F5F0E8] text-gray-600 hover:bg-gray-200"
-                  }`}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${trendRange === "Jan - June" ? "bg-[#1B4332] text-white" : "bg-[#F5F0E8] text-gray-600 hover:bg-gray-200"
+                    }`}
                 >
                   Meher Window
                 </button>
                 <button
                   type="button"
                   onClick={() => setTrendRange("Full Year")}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                    trendRange === "Full Year" ? "bg-[#1B4332] text-white" : "bg-[#F5F0E8] text-gray-600 hover:bg-gray-200"
-                  }`}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${trendRange === "Full Year" ? "bg-[#1B4332] text-white" : "bg-[#F5F0E8] text-gray-600 hover:bg-gray-200"
+                    }`}
                 >
                   Belg Window
                 </button>
@@ -516,7 +518,7 @@ export default function FinanceDashboardPage() {
 
         {/* Right Column (4 cols): Accessible Record Entry (Segmented Switcher) */}
         <div className="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-[#E5DFD3] p-6 sm:p-7 space-y-5">
-          
+
           {/* Segmented Mode Selector: Log Expense vs Record Harvest */}
           <div className="flex bg-[#F5F0E8] p-1 rounded-xl">
             <button
@@ -526,11 +528,10 @@ export default function FinanceDashboardPage() {
                 setFormError(null);
                 setFormSuccess(null);
               }}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                activeEntryTab === "expense"
-                  ? "bg-[#2D6A4F] text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeEntryTab === "expense"
+                ? "bg-[#2D6A4F] text-white shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
+                }`}
             >
               Log Expense
             </button>
@@ -541,11 +542,10 @@ export default function FinanceDashboardPage() {
                 setFormError(null);
                 setFormSuccess(null);
               }}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                activeEntryTab === "harvest"
-                  ? "bg-[#2D6A4F] text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeEntryTab === "harvest"
+                ? "bg-[#2D6A4F] text-white shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
+                }`}
             >
               Record Harvest
             </button>

@@ -22,6 +22,8 @@ const CalculateSchema = z.discriminatedUnion('method', [
     width: z.number().positive('Width must be positive'),
     lengthUnit: z.enum(['meters', 'kilometers', 'feet']),
     widthUnit: z.enum(['meters', 'kilometers', 'feet']),
+    pricePerSquareMeter: z.number().positive().optional().nullable(),
+    pricePerHectare: z.number().positive().optional().nullable(),
   }),
   z.object({
     method: z.literal('polygon'),
@@ -33,6 +35,8 @@ const CalculateSchema = z.discriminatedUnion('method', [
         })
       )
       .min(3, 'At least 3 coordinates are required to calculate polygon area'),
+    pricePerSquareMeter: z.number().positive().optional().nullable(),
+    pricePerHectare: z.number().positive().optional().nullable(),
   }),
 ]);
 
@@ -51,9 +55,15 @@ landRouter.post(
           width: body.width,
           lengthUnit: body.lengthUnit,
           widthUnit: body.widthUnit,
+          pricePerSquareMeter: body.pricePerSquareMeter ?? undefined,
+          pricePerHectare: body.pricePerHectare ?? undefined,
         });
       } else {
-        result = calculatePolygonArea(body.coordinates);
+        result = calculatePolygonArea(
+          body.coordinates,
+          body.pricePerSquareMeter ?? undefined,
+          body.pricePerHectare ?? undefined
+        );
       }
 
       res.json({
@@ -158,12 +168,18 @@ landRouter.post(
           width: data.width,
           lengthUnit: data.lengthUnit,
           widthUnit: data.widthUnit,
+          pricePerSquareMeter: data.pricePerSquareMeter ?? undefined,
+          pricePerHectare: data.pricePerHectare ?? undefined,
         });
       } else {
         if (!data.coordinates || data.coordinates.length < 3) {
           throw new BadRequestError('At least 3 polygon boundary coordinates are required.');
         }
-        areaCalc = calculatePolygonArea(data.coordinates);
+        areaCalc = calculatePolygonArea(
+          data.coordinates,
+          data.pricePerSquareMeter ?? undefined,
+          data.pricePerHectare ?? undefined
+        );
       }
 
       if (isUsingPrisma && prisma) {
@@ -183,6 +199,8 @@ landRouter.post(
             plotName: data.plotName,
             crop: data.crop || null,
             calculationMethod: data.calculationMethod,
+            measurementSource: data.measurementSource || (data.calculationMethod === 'polygon' ? 'map_polygon' : 'manual'),
+            gpsAccuracyMeters: data.gpsAccuracyMeters ?? null,
             length: data.length || null,
             width: data.width || null,
             lengthUnit: data.lengthUnit || null,
@@ -191,6 +209,9 @@ landRouter.post(
             areaSquareMeters: areaCalc.squareMeters,
             areaHectares: areaCalc.hectares,
             areaAcres: areaCalc.acres,
+            pricePerSquareMeter: areaCalc.pricePerSquareMeter ?? null,
+            pricePerHectare: areaCalc.pricePerHectare ?? null,
+            estimatedValueETB: areaCalc.estimatedValueETB ?? null,
             isEstimate: areaCalc.isEstimate,
             notes: data.notes || null,
           },
@@ -215,6 +236,8 @@ landRouter.post(
         plotName: data.plotName,
         crop: data.crop || null,
         calculationMethod: data.calculationMethod,
+        measurementSource: data.measurementSource || (data.calculationMethod === 'polygon' ? 'map_polygon' : 'manual'),
+        gpsAccuracyMeters: data.gpsAccuracyMeters ?? null,
         length: data.length || null,
         width: data.width || null,
         lengthUnit: data.lengthUnit || null,
@@ -223,6 +246,9 @@ landRouter.post(
         areaSquareMeters: areaCalc.squareMeters,
         areaHectares: areaCalc.hectares,
         areaAcres: areaCalc.acres,
+        pricePerSquareMeter: areaCalc.pricePerSquareMeter ?? null,
+        pricePerHectare: areaCalc.pricePerHectare ?? null,
+        estimatedValueETB: areaCalc.estimatedValueETB ?? null,
         isEstimate: areaCalc.isEstimate,
         notes: data.notes || null,
         createdAt: now,

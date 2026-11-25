@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { Farm, ZoneItem, EthiopiaRegionSummary, LandRecord } from "@gebere/shared";
 import { apiClient } from "@/lib/api-client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations } from "@/lib/i18n";
 
 const PRIORITY_CROPS = [
   { id: "Coffee", name: "Coffee", icon: "☕" },
@@ -29,6 +31,8 @@ const PRIORITY_CROPS = [
 ];
 
 export default function MyFarmPage() {
+  const { language } = useApp();
+  const t = platformTranslations[language];
   const [farmName, setFarmName] = useState("Bale Ridge Estate");
   const [regions, setRegions] = useState<EthiopiaRegionSummary[]>([]);
   const [selectedRegion, setSelectedRegion] = useState("Oromia");
@@ -132,7 +136,7 @@ export default function MyFarmPage() {
         kebele: customKebele || undefined,
         totalHectares: parseFloat(landArea) > 0 ? parseFloat(landArea) / 10000 : 1.25,
         primaryCrop: selectedCropNames || "Teff",
-        notes: `Registered via Oomisha360 My Farm panel. Location: ${selectedRegion}, ${selectedZone}, ${selectedWoreda}.`,
+        notes: `Registered via Gebere 360 My Farm panel. Location: ${selectedRegion}, ${selectedZone}, ${selectedWoreda}.`,
       });
 
       setSavedFarms((prev) => [newFarm, ...prev]);
@@ -203,10 +207,10 @@ export default function MyFarmPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#1A1A2E] tracking-tight">
-            My Farm
+            {t.farms.title}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Farm profile, field perimeter telemetry, and live agricultural activities.
+            {t.farms.subtitle}
           </p>
         </div>
 

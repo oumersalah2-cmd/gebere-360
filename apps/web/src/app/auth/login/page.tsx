@@ -5,11 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ChevronDown, Globe, AlertCircle, Info } from "lucide-react";
-import { setAuthToken, setDemoMode } from "@/lib/api-client";
+import { setAuthToken, setDemoMode, apiClient } from "@/lib/api-client";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations, SUPPORTED_LANGUAGES } from "@/lib/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { language, setLanguage } = useApp();
+  const t = platformTranslations[language];
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isTopLangOpen, setIsTopLangOpen] = useState(false);
@@ -22,7 +26,7 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMsg(null);
 
-    const email = identifier.includes("@") ? identifier.trim() : `${identifier.trim()}@oomisha360.et`;
+    const email = identifier.includes("@") ? identifier.trim() : `${identifier.trim()}@gebere360.et`;
 
     // 1. Real Supabase Authentication
     if (isSupabaseConfigured()) {
@@ -74,19 +78,25 @@ export default function LoginPage() {
               className="inline-flex items-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 rounded-xl px-3 py-1.5 text-xs text-white/90 transition-colors"
             >
               <Globe className="h-3.5 w-3.5" />
-              <span>Language</span>
+              <span>{SUPPORTED_LANGUAGES.find((l) => l.code === language)?.nativeLabel || "Language"}</span>
               <ChevronDown className="h-3 w-3 opacity-70" />
             </button>
             {isTopLangOpen && (
-              <div className="absolute top-10 right-0 bg-[#163628] border border-white/20 rounded-xl py-1 w-32 shadow-xl z-20 text-xs">
-                {["English", "Afaan Oromoo", "Amharic"].map((l) => (
+              <div className="absolute top-10 right-0 bg-[#163628] border border-white/20 rounded-xl py-1 w-36 shadow-xl z-20 text-xs">
+                {SUPPORTED_LANGUAGES.map((l) => (
                   <button
-                    key={l}
+                    key={l.code}
                     type="button"
-                    onClick={() => setIsTopLangOpen(false)}
-                    className="w-full text-left px-3 py-1.5 hover:bg-white/10 text-white/90"
+                    onClick={() => {
+                      setLanguage(l.code);
+                      setIsTopLangOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 hover:bg-white/10 flex items-center justify-between ${
+                      language === l.code ? "text-[#d9f99d] font-bold" : "text-white/90"
+                    }`}
                   >
-                    {l}
+                    <span>{l.nativeLabel}</span>
+                    <span>{l.flag}</span>
                   </button>
                 ))}
               </div>
@@ -96,7 +106,7 @@ export default function LoginPage() {
           {/* Center Brand Title & Tagline */}
           <div className="my-8 text-center space-y-3">
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white font-sans">
-              Oomisha360
+              Gebere 360
             </h1>
             <p className="text-sm sm:text-base text-emerald-100/90 leading-relaxed max-w-xs mx-auto">
               Know Your Farm. Control Your Costs.
@@ -120,7 +130,7 @@ export default function LoginPage() {
         {/* Right Form Panel */}
         <div className="md:w-1/2 p-8 sm:p-12 bg-white flex flex-col justify-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#1B4332] mb-6">
-            Welcome Back
+            {t.auth.welcomeBack}
           </h2>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -146,13 +156,13 @@ export default function LoginPage() {
             {/* Phone Number or Email */}
             <div>
               <label className="text-xs font-medium text-gray-700 block mb-1">
-                Phone Number or Email
+                {t.auth.emailOrPhone}
               </label>
               <input
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="0911... or farmer@oomisha360.et"
+                placeholder="0911... or farmer@gebere360.et"
                 className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#2D6A4F] focus:ring-1 focus:ring-[#2D6A4F] transition-all"
                 required
               />
@@ -161,8 +171,22 @@ export default function LoginPage() {
             {/* Password */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-medium text-gray-700">Password</label>
-                <a href="#" className="text-xs text-[#2D6A4F] hover:underline">Forgot password?</a>
+                <label className="text-xs font-medium text-gray-700">{t.auth.password}</label>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const email = identifier.includes("@") ? identifier.trim() : "";
+                    if (!email) {
+                      setErrorMsg("Enter your email address above first to receive a password reset link.");
+                      return;
+                    }
+                    const res = await apiClient.forgotPassword(email);
+                    setErrorMsg(res.success ? res.message || "Reset link sent to your email." : res.error || "Unable to send reset link.");
+                  }}
+                  className="text-xs text-[#2D6A4F] hover:underline"
+                >
+                  {t.auth.forgotPassword}
+                </button>
               </div>
               <input
                 type="password"
@@ -181,7 +205,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-[#40916C] hover:bg-[#2D6A4F] text-white font-medium py-3 rounded-xl text-sm transition-all shadow-md shadow-[#2D6A4F]/20 active:scale-[0.99]"
               >
-                {loading ? "Signing in..." : "Login"}
+                {loading ? t.auth.signingIn : t.auth.loginBtn}
               </button>
             </div>
 
@@ -189,12 +213,12 @@ export default function LoginPage() {
 
           {/* Footer Link */}
           <div className="text-center mt-6 text-sm text-gray-600">
-            <span>Don&apos;t have an account? </span>
+            <span>{t.auth.noAccount} </span>
             <Link
               href="/auth/register"
               className="text-[#2D6A4F] font-semibold hover:underline"
             >
-              Register
+              {t.auth.registerBtn}
             </Link>
           </div>
         </div>

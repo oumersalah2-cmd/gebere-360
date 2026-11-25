@@ -8,14 +8,19 @@ import { ChevronDown, Globe, AlertCircle, CheckCircle2, Info, Wheat } from "luci
 import { ZoneItem } from "@gebere/shared";
 import { setAuthToken, setDemoMode, apiClient } from "@/lib/api-client";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
+import { useApp } from "@/context/AppContext";
+import { platformTranslations, SUPPORTED_LANGUAGES, Language } from "@/lib/i18n";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { language: appLanguage, setLanguage: setAppLanguage } = useApp();
+  const t = platformTranslations[appLanguage];
   const [fullName, setFullName] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [zones, setZones] = useState<ZoneItem[]>([]);
   const [farmLocation, setFarmLocation] = useState("");
+  const [role, setRole] = useState<"farmer" | "buyer" | "agronomist" | "cooperative_manager">("farmer");
   const [language, setLanguage] = useState("");
   const [topLanguage, setTopLanguage] = useState("English");
   const [isTopLangOpen, setIsTopLangOpen] = useState(false);
@@ -58,57 +63,57 @@ export default function RegisterPage() {
     }
 
     try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              fullName: fullName.trim(),
-              zone: farmLocation,
-              language,
-              role: "farmer",
-            },
-          },
-        });
-
-        if (error) {
-          setErrorMsg(error.message);
-          setLoading(false);
-          return;
-        }
-
-        if (data.session) {
-          setAuthToken(data.session.access_token);
-          setDemoMode(false);
-
-          await apiClient.updateProfile({
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
             fullName: fullName.trim(),
             zone: farmLocation,
-          });
+            language,
+            role,
+          },
+        },
+      });
 
-          router.push("/farms");
-          return;
-        }
-
-        if (data.user) {
-          setSuccessMsg("Registration successful! If confirmation is required, please check your email inbox to verify your account before logging in.");
-          setLoading(false);
-          return;
-        }
-      } catch (err: unknown) {
-        setErrorMsg(err instanceof Error ? err.message : "Failed to create Supabase account.");
+      if (error) {
+        setErrorMsg(error.message);
         setLoading(false);
+        return;
       }
+
+      if (data.session) {
+        setAuthToken(data.session.access_token);
+        setDemoMode(false);
+
+        await apiClient.updateProfile({
+          fullName: fullName.trim(),
+          zone: farmLocation,
+        });
+
+        router.push("/farms");
+        return;
+      }
+
+      if (data.user) {
+        setSuccessMsg("Registration successful! If confirmation is required, please check your email inbox to verify your account before logging in.");
+        setLoading(false);
+        return;
+      }
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to create Supabase account.");
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#1B4332]/90 md:bg-[#23533E] flex items-center justify-center p-4 sm:p-6 lg:p-8">
       {/* Split Auth Modal Card */}
       <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-        
+
         {/* Left Green Brand Panel */}
         <div className="md:w-1/2 bg-[#1B4332] p-8 sm:p-10 text-white flex flex-col justify-between relative">
-          
+
           {/* Top Language Dropdown */}
           <div className="flex justify-end relative">
             <button
@@ -117,22 +122,27 @@ export default function RegisterPage() {
               className="inline-flex items-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 rounded-xl px-3 py-1.5 text-xs text-white/90 transition-colors"
             >
               <Globe className="h-3.5 w-3.5" />
-              <span>Language</span>
+              <span>{SUPPORTED_LANGUAGES.find((l) => l.code === appLanguage)?.nativeLabel || "Language"}</span>
               <ChevronDown className="h-3 w-3 opacity-70" />
             </button>
             {isTopLangOpen && (
-              <div className="absolute top-10 right-0 bg-[#163628] border border-white/20 rounded-xl py-1 w-32 shadow-xl z-20 text-xs">
-                {["English", "Afaan Oromoo", "Amharic"].map((l) => (
+              <div className="absolute top-10 right-0 bg-[#163628] border border-white/20 rounded-xl py-1 w-36 shadow-xl z-20 text-xs">
+                {SUPPORTED_LANGUAGES.map((l) => (
                   <button
-                    key={l}
+                    key={l.code}
                     type="button"
                     onClick={() => {
-                      setTopLanguage(l);
+                      setAppLanguage(l.code);
+                      setTopLanguage(l.label);
+                      setLanguage(l.label);
                       setIsTopLangOpen(false);
                     }}
-                    className="w-full text-left px-3 py-1.5 hover:bg-white/10 text-white/90"
+                    className={`w-full text-left px-3 py-1.5 hover:bg-white/10 flex items-center justify-between ${
+                      appLanguage === l.code ? "text-[#d9f99d] font-bold" : "text-white/90"
+                    }`}
                   >
-                    {l}
+                    <span>{l.nativeLabel}</span>
+                    <span>{l.flag}</span>
                   </button>
                 ))}
               </div>
@@ -145,7 +155,7 @@ export default function RegisterPage() {
               <Wheat className="h-6 w-6" />
               <span className="text-xs font-bold uppercase tracking-[0.2em]">{topLanguage}</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white font-sans">Oomisha360</h1>
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white font-sans">Gebere 360</h1>
             <p className="text-sm sm:text-base text-emerald-100/90 leading-relaxed max-w-xs mx-auto">
               Know Your Farm. Control Your Costs.
               <br />
@@ -168,7 +178,7 @@ export default function RegisterPage() {
         {/* Right Form Panel */}
         <div className="md:w-1/2 p-8 sm:p-12 bg-white flex flex-col justify-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#1B4332] mb-6">
-            Create Your Account
+            {t.auth.createAccount}
           </h2>
 
           <form onSubmit={handleRegister} className="space-y-4">
@@ -246,10 +256,28 @@ export default function RegisterPage() {
                 >
                   <option value="" disabled>Select your farm zone</option>
                   {zones.map((z) => (
-                      <option key={z.id} value={z.name}>
-                        {z.name}
-                      </option>
+                    <option key={z.id} value={z.name}>
+                      {z.name}
+                    </option>
                   ))}
+                </select>
+                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Account Role */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700">{t.auth.accountRole}</label>
+              <div className="relative">
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as "farmer" | "buyer" | "agronomist" | "cooperative_manager")}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 appearance-none pr-10 focus:outline-none focus:border-[#2D6A4F] focus:ring-1 focus:ring-[#2D6A4F]"
+                >
+                  <option value="farmer">{t.auth.roles.farmer}</option>
+                  <option value="buyer">{t.auth.roles.buyer}</option>
+                  <option value="agronomist">{t.auth.roles.agronomist}</option>
+                  <option value="cooperative_manager">{t.auth.roles.cooperative_manager}</option>
                 </select>
                 <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
               </div>
@@ -257,16 +285,25 @@ export default function RegisterPage() {
 
             {/* Preferred Language */}
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">Preferred Language</label>
+              <label className="text-xs font-medium text-gray-700">{t.auth.preferredLang}</label>
               <div className="relative">
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLanguage(val);
+                    const codeMap: Record<string, Language> = {
+                      "Afaan Oromoo": "om",
+                      Amharic: "am",
+                      English: "en",
+                    };
+                    if (codeMap[val]) setAppLanguage(codeMap[val]);
+                  }}
                   className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 appearance-none pr-10 focus:outline-none focus:border-[#2D6A4F] focus:ring-1 focus:ring-[#2D6A4F]"
                 >
-                  <option value="" disabled>Select a language</option>
+                  <option value="" disabled>{t.auth.selectLang}</option>
                   <option value="Afaan Oromoo">Afaan Oromoo</option>
-                  <option value="Amharic">Amharic</option>
+                  <option value="Amharic">Amharic (አማርኛ)</option>
                   <option value="English">English</option>
                 </select>
                 <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
@@ -280,19 +317,19 @@ export default function RegisterPage() {
                 disabled={loading}
                 className="w-full bg-[#40916C] hover:bg-[#2D6A4F] text-white font-medium py-3 rounded-xl text-sm transition-all shadow-md shadow-[#2D6A4F]/20 active:scale-[0.99]"
               >
-                {loading ? "Creating Account..." : "Register"}
+                {loading ? t.auth.creatingAccount : t.auth.registerBtn}
               </button>
             </div>
           </form>
 
           {/* Footer Link */}
           <div className="text-center mt-6 text-sm text-gray-600">
-            <span>Already have an account? </span>
+            <span>{t.auth.hasAccount} </span>
             <Link
               href="/auth/login"
               className="text-[#2D6A4F] font-semibold hover:underline"
             >
-              Login
+              {t.auth.loginBtn}
             </Link>
           </div>
         </div>

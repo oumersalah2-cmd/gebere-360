@@ -9,8 +9,8 @@ import {
   calculateProfitPerHectare,
   calculateCategoryBreakdown,
   calculateFinanceSummary,
-} from '../utils/finance.ts';
-import type { Expense, Harvest } from '../types/index.ts';
+} from '../utils/finance.js';
+import type { Expense, Harvest } from '../types/index.js';
 
 describe('Farm Financial & Profit Calculations', () => {
   describe('Expense Totals & Decimal Safety', () => {

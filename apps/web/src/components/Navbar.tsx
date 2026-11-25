@@ -27,7 +27,7 @@ export default function Navbar() {
       if (stored !== null) {
         setIsDemo(stored !== "false");
       }
-    } catch {}
+    } catch { }
   }, []);
 
   const pathname = usePathname();
@@ -60,7 +60,7 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col">
                 <span className="font-sans font-extrabold text-lg tracking-tight text-white leading-tight">
-                  Gebere<span className="text-emerald-green">Vision</span> <span className="text-xs text-emerald-accent font-semibold ml-1">AI</span>
+                  Gebere <span className="text-emerald-green">360</span>
                 </span>
                 <span className="text-[10px] text-zinc-400 font-medium">Agricultural Platform of Ethiopia</span>
               </div>
@@ -83,9 +83,8 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`text-xs font-semibold tracking-wide transition-all duration-150 hover:text-emerald-green ${
-                    isActive ? "text-emerald-green font-bold" : "text-zinc-300"
-                  }`}
+                  className={`text-xs font-semibold tracking-wide transition-all duration-150 hover:text-emerald-green ${isActive ? "text-emerald-green font-bold" : "text-zinc-300"
+                    }`}
                 >
                   {item.name}
                 </Link>
@@ -97,15 +96,14 @@ export default function Navbar() {
               <button
                 onClick={() => setToolsOpen(!toolsOpen)}
                 onBlur={() => setTimeout(() => setToolsOpen(false), 200)}
-                className={`flex items-center gap-1 text-xs font-semibold tracking-wide transition-colors hover:text-emerald-green ${
-                  pathname.includes("/farms") ||
+                className={`flex items-center gap-1 text-xs font-semibold tracking-wide transition-colors hover:text-emerald-green ${pathname.includes("/farms") ||
                   pathname.includes("/land-calculator") ||
                   pathname.includes("/expenses") ||
                   pathname.includes("/profit-calculator") ||
                   pathname.includes("/finance")
-                    ? "text-emerald-green font-bold"
-                    : "text-zinc-300"
-                }`}
+                  ? "text-emerald-green font-bold"
+                  : "text-zinc-300"
+                  }`}
               >
                 <span>Farm Tools</span>
                 <ChevronDown className="h-3 w-3" />
@@ -118,9 +116,8 @@ export default function Navbar() {
                       key={tool.href}
                       href={tool.href}
                       onClick={() => setToolsOpen(false)}
-                      className={`block px-3 py-2 rounded-xl text-xs transition-colors hover:bg-forest-green/30 ${
-                        pathname === tool.href ? "bg-forest-green/40 text-emerald-green font-semibold" : "text-zinc-200"
-                      }`}
+                      className={`block px-3 py-2 rounded-xl text-xs transition-colors hover:bg-forest-green/30 ${pathname === tool.href ? "bg-forest-green/40 text-emerald-green font-semibold" : "text-zinc-200"
+                        }`}
                     >
                       <div className="font-semibold text-white">{tool.name}</div>
                       <div className="text-[10px] text-zinc-400">{tool.desc}</div>
@@ -133,11 +130,10 @@ export default function Navbar() {
             {/* User Profile */}
             <Link
               href="/profile"
-              className={`p-2 rounded-xl border transition-all ${
-                pathname === "/profile"
-                  ? "border-emerald-green text-emerald-green bg-emerald-green/10"
-                  : "border-border text-zinc-400 hover:text-white hover:border-emerald-green/40"
-              }`}
+              className={`p-2 rounded-xl border transition-all ${pathname === "/profile"
+                ? "border-emerald-green text-emerald-green bg-emerald-green/10"
+                : "border-border text-zinc-400 hover:text-white hover:border-emerald-green/40"
+                }`}
               title="Farmer Profile"
             >
               <User className="h-4 w-4" />
@@ -178,11 +174,10 @@ export default function Navbar() {
               key={item.href}
               href={item.href}
               onClick={() => setIsOpen(false)}
-              className={`block px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                pathname === item.href
-                  ? "text-emerald-green bg-emerald-green/10"
-                  : "text-zinc-300 hover:text-white hover:bg-card"
-              }`}
+              className={`block px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${pathname === item.href
+                ? "text-emerald-green bg-emerald-green/10"
+                : "text-zinc-300 hover:text-white hover:bg-card"
+                }`}
             >
               {item.name}
             </Link>
@@ -198,9 +193,8 @@ export default function Navbar() {
                   key={tool.href}
                   href={tool.href}
                   onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 rounded-xl text-xs transition-colors ${
-                    pathname === tool.href ? "bg-forest-green/40 text-emerald-green font-semibold" : "text-zinc-300 hover:bg-card"
-                  }`}
+                  className={`block px-3 py-2 rounded-xl text-xs transition-colors ${pathname === tool.href ? "bg-forest-green/40 text-emerald-green font-semibold" : "text-zinc-300 hover:bg-card"
+                    }`}
                 >
                   <div className="font-semibold text-white">{tool.name}</div>
                   <div className="text-[10px] text-zinc-400">{tool.desc}</div>

@@ -2,13 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { MarketplaceListing } from "@/data/marketplace";
-import { 
-  getListingsAction, 
-  createListingAction, 
-  getDiagnosesAction, 
-  createDiagnosisAction 
-} from "@/app/actions";
-
 import { Language } from "@/lib/i18n";
 
 export interface DiagnosticHistoryItem {
@@ -56,21 +49,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [diagnoses, setDiagnoses] = useState<DiagnosticHistoryItem[]>([]);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-  ]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  // Synchronize stored preferences strictly after hydration on the client
+  // Synchronize stored preferences after hydration on the client
   useEffect(() => {
-    try {
-      const storedLang = localStorage.getItem("gebere_lang") as Language;
-      if (storedLang && (storedLang === "en" || storedLang === "om" || storedLang === "am")) {
-        setLanguageState(storedLang);
+    const timer = setTimeout(() => {
+      try {
+        const storedLang = localStorage.getItem("gebere_lang") as Language;
+        if (storedLang === "en" || storedLang === "om" || storedLang === "am") {
+          setLanguageState(storedLang);
+        }
+        const storedNotes = localStorage.getItem("gebere_notifications");
+        if (storedNotes) {
+          setNotifications(JSON.parse(storedNotes));
+        }
+      } catch {
+        // Ignore storage errors
       }
-      const storedNotes = localStorage.getItem("gebere_notifications");
-      if (storedNotes) {
-        setNotifications(JSON.parse(storedNotes));
-      }
-    } catch {}
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Sync document html lang attribute with current language selection
@@ -84,24 +81,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLanguageState(lang);
     try {
       localStorage.setItem("gebere_lang", lang);
-    } catch {}
-  };
-
-  // Load listings and diagnoses
-  useEffect(() => {
-    async function loadData() {
-      const dbListings = await getListingsAction();
-      const dbDiagnoses = await getDiagnosesAction();
-      
-      if (dbListings.length > 0) {
-        setListings(dbListings);
-      }
-      if (dbDiagnoses.length > 0) {
-        setDiagnoses(dbDiagnoses);
-      }
+    } catch {
+      // Ignore storage errors
     }
-    loadData();
-  }, []);
+  };
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
 
@@ -110,13 +93,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ...notif,
       id: `notif-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      read: false
+      read: false,
     };
     setNotifications((prev) => {
       const updated = [newNotif, ...prev];
       try {
         localStorage.setItem("gebere_notifications", JSON.stringify(updated));
-      } catch {}
+      } catch {
+        // Ignore storage errors
+      }
       return updated;
     });
   };
@@ -126,7 +111,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const updated = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
       try {
         localStorage.setItem("gebere_notifications", JSON.stringify(updated));
-      } catch {}
+      } catch {
+        // Ignore storage errors
+      }
       return updated;
     });
   };
@@ -136,7 +123,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const updated = prev.map((n) => ({ ...n, read: true }));
       try {
         localStorage.setItem("gebere_notifications", JSON.stringify(updated));
-      } catch {}
+      } catch {
+        // Ignore storage errors
+      }
       return updated;
     });
   };
@@ -146,36 +135,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const updated = prev.filter((n) => n.id !== id);
       try {
         localStorage.setItem("gebere_notifications", JSON.stringify(updated));
-      } catch {}
+      } catch {
+        // Ignore storage errors
+      }
       return updated;
     });
   };
 
-  const addListing = async (newListingData: Omit<MarketplaceListing, "id">) => {
-    // Optimistic UI update
-    const tempId = `lst-${Date.now()}`;
+  const addListing = (newListingData: Omit<MarketplaceListing, "id">) => {
     const newListing: MarketplaceListing = {
       ...newListingData,
-      id: tempId
+      id: `lst-${Date.now()}`,
     };
     setListings((prev) => [newListing, ...prev]);
-
-    // Save to Neon DB
-    await createListingAction(newListingData);
   };
 
-  const addDiagnosis = async (newDiagData: Omit<DiagnosticHistoryItem, "id" | "timestamp">) => {
-    // Optimistic UI update
-    const tempId = `diag-${Date.now()}`;
+  const addDiagnosis = (newDiagData: Omit<DiagnosticHistoryItem, "id" | "timestamp">) => {
     const newDiag: DiagnosticHistoryItem = {
       ...newDiagData,
-      id: tempId,
-      timestamp: new Date().toISOString()
+      id: `diag-${Date.now()}`,
+      timestamp: new Date().toISOString(),
     };
     setDiagnoses((prev) => [newDiag, ...prev]);
-
-    // Save to Neon DB
-    await createDiagnosisAction(newDiagData);
   };
 
   return (
@@ -192,7 +173,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addNotification,
         markNotificationAsRead,
         markAllNotificationsAsRead,
-        dismissNotification
+        dismissNotification,
       }}
     >
       {children}
@@ -202,7 +183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 export function useApp() {
   const context = useContext(AppContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useApp must be used within an AppProvider");
   }
   return context;
